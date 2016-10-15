@@ -8,7 +8,7 @@ class CPWResonator:
 
     def __init__(self, length, conductorWidth, gapWidth, conductorThickness, resonatorType,
                  conductorMaterial='Niobium', substrateMaterial='Silicon',
-                 temperature=4, capacitiveCoupling=0, loadBoundaryCondition='Short'):
+                 temperature=4, couplingCapacitance=0E0, loadImpedance=50, loadBoundaryCondition='Short'):
         # Supplied parameters
         self.length = length
         self.conductorWidth = conductorWidth
@@ -18,7 +18,8 @@ class CPWResonator:
         self.conductor = self.conductorProperties(conductorMaterial)
         self.substrate = self.substrateProperties(substrateMaterial)
         self.temperature = temperature
-        self.capacitiveCoupling = capacitiveCoupling
+        self.couplingCapacitance = couplingCapacitance
+        self.loadImpedance = loadImpedance
         self.loadBoundaryCondition = loadBoundaryCondition
 
         # Calculated parameters
@@ -31,6 +32,8 @@ class CPWResonator:
         self.characteristicImpedance = self.characteristicImpedance(self.totalInductance, self.substrateCapacitance)
         self.resonantFrequency = self.resonantFrequency(self.totalInductance, self.substrateCapacitance, self.length,
             self.resonatorType)
+        self.coupledResonantFrequency = self.coupledResonantFrequency(self.totalInductance, self.substrateCapacitance, self.length,
+            self.resonatorType, self.couplingCapacitance, self.loadImpedance)
         self.inputImpedance = self.inputImpedance(self.length, self.characteristicImpedance, self.loadBoundaryCondition,
             self.totalInductance, self.substrateCapacitance, self.resonantFrequency)
 
@@ -119,22 +122,49 @@ class CPWResonator:
             print('Error: Incorrect resonator type provided!')
             return -1
 
-        return 1 / (math.sqrt(inductance*capacitance) * resonatorTypeFactor * length)
+        return  1 / (math.sqrt(inductance*capacitance) * resonatorTypeFactor * length)
+
+    def coupledResonantFrequency(self, inductance, capacitance, length, resonatorType, couplingCapacitance, loadImpedane, mode=1):
+
+        if resonatorType == 'half':
+            resonatorTypeFactor = 2
+        elif resonatorType == 'quarter':
+            resonatorTypeFactor = 4
+        else:
+            print('Error: Incorrect resonator type provided!')
+            return -1
+
+        # Pre-coupled
+        resonantFrequency = 1 / (math.sqrt(inductance * capacitance) * resonatorTypeFactor * length)
+
+        # Post-coupled
+        inductance_n = resonatorTypeFactor * length * inductance / (math.pow(math.pi, 2) * math.pow(mode, 2))
+        capacitance_n = resonatorTypeFactor * capacitance * length / 4
+
+        effectiveCouplingCapacitance = self.nortonCapacitance(couplingCapacitance, resonantFrequency, loadImpedane)
+
+        return 1 / (math.sqrt(inductance_n * (capacitance_n + effectiveCouplingCapacitance)) * 2*math.pi)
+
+    def nortonCapacitance(self, couplingCapacitance, resonantFrequency, loadImpedane):
+        return couplingCapacitance / \
+               (1 + math.pow(resonantFrequency, 2) * math.pow(couplingCapacitance, 2) * math.pow(loadImpedane, 2))
 
     def conductorProperties(self, material):
         return{
-            'Niobium': Conductor(material=material, criticalTemperature=9.2, londonPenetrationDepthZero=40E-9,
+            'Niobium': Conductor(material=material, criticalTemperature=9.2, londonPenetrationDepthZero=33.3E-9,
                 resistance=0, conductance=0),
             'Niobium Nitride': Conductor(material=material, criticalTemperature=16.2, londonPenetrationDepthZero=40E-9,
                 resistance=0, conductance=0),
-            'Aluminium': Conductor(material=material, criticalTemperature=1.2, londonPenetrationDepthZero=40E-9,
+            'Niobium Titanium Nitride': Conductor(material=material, criticalTemperature=16.2, londonPenetrationDepthZero=40E-9,
                 resistance=0, conductance=0),
+            'Aluminium': Conductor(material=material, criticalTemperature=1.2, londonPenetrationDepthZero=15.4E-9,
+                                   resistance=0, conductance=0),
         }[material]
 
     def substrateProperties(self, material):
         return{
-            'Silicon': Substrate(material=material, relativePermittivity=11.6),
-            'Silicon Oxide': Substrate(material=material, relativePermittivity=3.9),
+            'Silicon': Substrate(material=material, relativePermittivity=11.9),
+            'Silicon Oxide': Substrate(material=material, relativePermittivity=4.9),
             'Sapphire': Substrate(material=material, relativePermittivity=10.2),
         }[material]
 
@@ -159,15 +189,16 @@ class Substrate:
 
 
 if __name__ == '__main__':
-    mCPW = CPWResonator(length=10E-3, conductorWidth=10E-6, gapWidth=6.6E-6, conductorThickness=200E-9,
+    mCPW = CPWResonator(length=7524E-6, conductorWidth=9.06E-6, gapWidth=5E-6, conductorThickness=160E-9,
                         resonatorType='quarter', conductorMaterial='Niobium', substrateMaterial='Silicon',
-                        temperature=4, capacitiveCoupling=0, loadBoundaryCondition='Short')
+                        temperature=4, couplingCapacitance=50E-15, loadBoundaryCondition='Short')
     print(tabulate(
         [['Effective permittivity', mCPW.effectivePermittivity, ''],
-         ['Substrate capacitance', mCPW.substrateCapacitance, 'pF/m'],
+         ['Substrate capacitance', mCPW.substrateCapacitance * math.pow(10, 12), 'pF/m'],
          ['Geometric Inductance', mCPW.geometricInducatance, 'H/m'],
          ['Kinetic Inductance', mCPW.kineticInductance, 'H/m'],
          ['Characteristic Impedance', mCPW.characteristicImpedance, 'Ohms'],
          ['Input Impedance', mCPW.inputImpedance, 'Ohms'],
-         ['Resonant frequency', mCPW.resonantFrequency, 'Ghz']],
+         ['Resonant frequency (Uncoupled)', mCPW.resonantFrequency/math.pow(10,9), 'Ghz'],
+         ['Resonant frequency (Coupled)', mCPW.coupledResonantFrequency / math.pow(10, 9), 'Ghz']],
         headers=['Property', 'Value', 'Units']))
