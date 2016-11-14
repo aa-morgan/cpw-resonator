@@ -1,14 +1,15 @@
 from scipy.special import ellipk
 import math
-import cmath
 from tabulate import tabulate
+import numpy as np
+import cmath
 
 class CPWResonator:
     'Coplanar wave-guide resonator class'
 
     def __init__(self, length, conductorWidth, gapWidth, conductorThickness, resonatorType,
                  conductorMaterial='Niobium', substrateMaterial='Silicon',
-                 temperature=4, couplingCapacitance=0E0, loadImpedance=50, loadBoundaryCondition='Short'):
+                 temperature=4, couplingCapacitance=0E0, loadImpedance=50, loadBoundaryCondition='Short', modes=[1]):
         # Supplied parameters
         self.length = length
         self.conductorWidth = conductorWidth
@@ -21,6 +22,7 @@ class CPWResonator:
         self.couplingCapacitance = couplingCapacitance
         self.loadImpedance = loadImpedance
         self.loadBoundaryCondition = loadBoundaryCondition
+        self.modes = modes
 
         # Calculated parameters
         self.effectivePermittivity = self.effectivePermittivity(self.substrate.relativePermittivity)
@@ -31,9 +33,9 @@ class CPWResonator:
         self.totalInductancePerUnitLength = self.geometricInducatancePerUnitLength + self.kineticInductancePerUnitLength
         self.characteristicImpedance = self.characteristicImpedance(self.totalInductancePerUnitLength, self.substrateCapacitancePerUnitLength)
         self.resonantFrequency = self.resonantFrequency(self.totalInductancePerUnitLength, self.substrateCapacitancePerUnitLength, self.length,
-            self.resonatorType)
+            self.resonatorType, self.modes)
         self.coupledResonantFrequency = self.coupledResonantFrequency(self.totalInductancePerUnitLength, self.substrateCapacitancePerUnitLength, self.length,
-            self.resonatorType, self.couplingCapacitance, self.loadImpedance)
+            self.resonatorType, self.couplingCapacitance, self.loadImpedance, self.modes)
         self.inputImpedance = self.inputImpedance(self.length, self.characteristicImpedance, self.loadBoundaryCondition,
             self.totalInductancePerUnitLength, self.substrateCapacitancePerUnitLength, self.resonantFrequency)
 
@@ -99,54 +101,54 @@ class CPWResonator:
 
     def inputImpedance(self, length, characteristicImpedance, loadBoundaryCondition, inductancePerUnitLength, capacitancePerUnitLength, frequency,
                        resistancePerUnitLength=0, conductancePerUnitLength=0):
-        gamma = cmath.sqrt(
+        gamma = np.sqrt(
             (resistancePerUnitLength + 1j*2*math.pi*frequency*inductancePerUnitLength ) *
             (conductancePerUnitLength + 1j*2*math.pi*frequency*capacitancePerUnitLength))
 
         if loadBoundaryCondition == 'Short':
-            return characteristicImpedance * cmath.tanh(gamma*length)
+            return characteristicImpedance * np.tanh(gamma*length)
         elif loadBoundaryCondition == 'Open':
-            return characteristicImpedance / cmath.tanh(gamma * length)
+            return characteristicImpedance / np.tanh(gamma * length)
         else:
             print('Error: Load boundary condition no valid!')
             return -1
 
-    def resonantFrequency(self, totalInductancePerUnitLength, capacitancePerUnitLength, length, resonatorType):
+    def resonantFrequency(self, totalInductancePerUnitLength, capacitancePerUnitLength, length, resonatorType, modes):
 
         if resonatorType == 'half':
-            resonatorTypeFactor = 2
+            resonatorTypeFactor = 2.0
         elif resonatorType == 'quarter':
-            resonatorTypeFactor = 4
+            resonatorTypeFactor = 4.0
         else:
             print('Error: Incorrect resonator type provided!')
             return -1
 
-        return  1 / (math.sqrt(totalInductancePerUnitLength*capacitancePerUnitLength) * resonatorTypeFactor * length)
+        return (np.array(modes) - (1-2/resonatorTypeFactor)) / (math.sqrt(totalInductancePerUnitLength*capacitancePerUnitLength) * 2 * length)
 
-    def coupledResonantFrequency(self, totalInductancePerUnitLength, capacitancePerUnitLength, length, resonatorType, couplingCapacitance, loadImpedane, mode=1):
+    def coupledResonantFrequency(self, totalInductancePerUnitLength, capacitancePerUnitLength, length, resonatorType, couplingCapacitance, loadImpedane, modes):
 
         if resonatorType == 'half':
-            resonatorTypeFactor = 2
+            resonatorTypeFactor = 2.0
         elif resonatorType == 'quarter':
-            resonatorTypeFactor = 4
+            resonatorTypeFactor = 4.0
         else:
             print('Error: Incorrect resonator type provided!')
             return -1
 
         # Pre-coupled
-        resonantFrequency = 1 / (math.sqrt(totalInductancePerUnitLength * capacitancePerUnitLength) * resonatorTypeFactor * length)
+        resonantFrequency = 1 / (math.sqrt(totalInductancePerUnitLength*capacitancePerUnitLength) * resonatorTypeFactor * length)
 
         # Post-coupled
-        totalInductance_n = (0.5*resonatorTypeFactor) * 2 * length * totalInductancePerUnitLength / (math.pow(math.pi, 2) * math.pow(mode, 2))
+        totalInductance_n = (0.5*resonatorTypeFactor) * 2 * length * totalInductancePerUnitLength / (math.pow(math.pi, 2) * np.power((np.array(modes) - (1-2/resonatorTypeFactor)), 2))
         totalCapacitance = (0.5*resonatorTypeFactor) * capacitancePerUnitLength * length / 2
 
         effectiveCouplingCapacitance = self.nortonCapacitance(couplingCapacitance, resonantFrequency, loadImpedane)
 
-        return 1 / (math.sqrt(totalInductance_n * (totalCapacitance + effectiveCouplingCapacitance)) * 2*math.pi)
+        return (resonatorTypeFactor/2) / (np.sqrt(totalInductance_n * (totalCapacitance + effectiveCouplingCapacitance)) * 2*math.pi)
 
     def nortonCapacitance(self, couplingCapacitance, frequency, loadImpedane):
         return couplingCapacitance / \
-               (1 + math.pow(frequency * couplingCapacitance * loadImpedane, 2))
+               (1 + np.power(frequency * couplingCapacitance * loadImpedane, 2))
 
     def conductorProperties(self, material):
         return{
@@ -188,9 +190,9 @@ class Substrate:
 
 
 if __name__ == '__main__':
-    mCPW = CPWResonator(length=7524E-6, conductorWidth=9.06E-6, gapWidth=5E-6, conductorThickness=100E-9,
+    mCPW = CPWResonator(length=7624E-6, conductorWidth=9.06E-6, gapWidth=5E-6, conductorThickness=100E-9,
                         resonatorType='quarter', conductorMaterial='Niobium', substrateMaterial='Silicon',
-                        temperature=4, couplingCapacitance=10E-15, loadBoundaryCondition='Short')
+                        temperature=4, couplingCapacitance=10E-15, loadBoundaryCondition='Short', modes=[1, 2, 3])
     print(tabulate(
         [['Effective permittivity', mCPW.effectivePermittivity, ''],
          ['Substrate capacitance', mCPW.substrateCapacitancePerUnitLength * math.pow(10, 12), 'pF/m'],
