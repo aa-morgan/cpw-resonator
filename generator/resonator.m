@@ -9,7 +9,7 @@ pMap('Resonator conductor width')               = pMap('Resonator gap width').*p
 pMap('Resonator curve inner radius')            = [40, 40];
 pMap('Resonator curve resolution')              = [54, 54];
     % ---
-pMap('Resonator coupler length')                = [120, 120]
+pMap('Resonator coupler length')                = [120, 120];
 pMap('Resonator interaction length')            = [[100:500:4500];[100:500:4500]]';
 pMap('Resonator feedline-interaction distance') = [1300, 1300];
 pMap('Resonator total length')                  = [7624, 7624]; % Only applicable if using extendable sections
@@ -29,7 +29,7 @@ pMap('Resonator X separation')                  = 5000;
   % Tiling
 pMap('Number of tiles up')                      = 3;
 pMap('Number of tiles right')                   = 3;
-pMap('Tile size')                               = [6500,4500];
+pMap('Tile size')                               = [6500,4000];
   % CleWin
 pMap('Using CleWin')                            = false;
   % General
