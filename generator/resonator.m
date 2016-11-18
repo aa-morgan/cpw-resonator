@@ -21,8 +21,8 @@ pMap('Feedline conductor:gap ratio:')           = 9.065/5.0;
 pMap('Feedline gap width')                      = 10.0;                       
 pMap('Feedline conductor width')                = pMap('Feedline gap width')*pMap('Feedline conductor:gap ratio:') ;
 pMap('Feedline-coupler distance')               = [20, 20];
-pMap('Feedline-coupler X clearance')            = [100, 100];
-pMap('Feedline length')                         = 500;  % Only applicable if not using two resonators
+pMap('Feedline-coupler X clearance')            = [300, 300];
+pMap('Feedline length')                         = 800;  % Only applicable if not using two resonators
   % End connector
 pMap('Add end connectors')                      = true;
 pMap('End connector ratio factor')              = 1.0/1.1031;
@@ -36,7 +36,7 @@ pMap('Resonator X separation')                  = 5000;
   % Tiling
 pMap('Number of tiles up')                      = 3;
 pMap('Number of tiles right')                   = 3;
-pMap('Tile size')                               = [8500,4000];
+pMap('Tile size')                               = [9000,4000];
   % CleWin
 pMap('Using CleWin')                            = false;
   % General
@@ -120,7 +120,9 @@ for tileY = 1:numTileY
         if not(isequal(size(endConnectExpanLen),[1,1])) endConnectExpanLen=endConnectExpanLen(tileIndex); end;
           % Multi resonator
         doubleRes   = pMap('Allow two resonators');
+        if not(isequal(size(doubleRes),[1,1])) doubleRes=doubleRes(tileIndex); end;
         resDist     = pMap('Resonator X separation');
+        if not(isequal(size(resDist),[1,1])) resDist=resDist(tileIndex); end;
         
 % ------------------------------------------------------------------
 % ----------- Per tile parameter set END ---------------------------
