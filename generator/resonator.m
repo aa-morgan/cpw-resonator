@@ -1,5 +1,5 @@
 % ------------------------------------------------------------------
-% -----------  Parameter set START ---------------------------------
+% ----------- Parameter set START ----------------------------------
 % ------------------------------------------------------------------
 pMap= containers.Map();
   % Resonator 
@@ -10,7 +10,7 @@ pMap('Resonator curve inner radius')            = [40, 40];
 pMap('Resonator curve resolution')              = [54, 54];
     % ---
 pMap('Resonator coupler length')                = [120, 120];
-pMap('Resonator interaction length')            = [[100:500:4500];[100:500:4500]]';
+pMap('Resonator interaction length')            = [5000,5000];%[[100:500:4500];[100:500:4500]]';
 pMap('Resonator feedline-interaction distance') = [1300, 1300];
 pMap('Resonator total length')                  = [7624, 7624]; % Only applicable if using extendable sections
     % ---
@@ -22,20 +22,27 @@ pMap('Feedline gap width')                      = 10.0;
 pMap('Feedline conductor width')                = pMap('Feedline gap width')*pMap('Feedline conductor:gap ratio:') ;
 pMap('Feedline-coupler distance')               = [20, 20];
 pMap('Feedline-coupler X clearance')            = [100, 100];
-pMap('Feedline length')                         = 500; % Only applicable if not using two resonators
+pMap('Feedline length')                         = 500;  % Only applicable if not using two resonators
+  % End connector
+pMap('Add end connectors')                      = true;
+pMap('End connector ratio factor')              = 1.0/1.1031;
+pMap('End connector pad conductor width')       = 300;
+pMap('End connector pad conductor length')      = 400;
+pMap('End connector pad gap length')            = 150;
+pMap('End connector expansion length')          = 610;
   % Multi resonator
 pMap('Allow two resonators')                    = true;
 pMap('Resonator X separation')                  = 5000;
   % Tiling
 pMap('Number of tiles up')                      = 3;
 pMap('Number of tiles right')                   = 3;
-pMap('Tile size')                               = [6500,4000];
+pMap('Tile size')                               = [8500,4000];
   % CleWin
 pMap('Using CleWin')                            = false;
   % General
 pMap('Print information')                       = false;
 % ------------------------------------------------------------------
-% -----------  Parameter set END -----------------------------------
+% ----------- Parameter set END ------------------------------------
 % ------------------------------------------------------------------
 
 % Single set parameters
@@ -58,7 +65,7 @@ for tileY = 1:numTileY
         tileIndex=((tileY-1)*numTileY)+tileX;
         
 % ------------------------------------------------------------------
-% -----------  Per tile parameter set START ------------------------
+% ----------- Per tile parameter set START -------------------------
 % ------------------------------------------------------------------
             % Resonator 
         resRatio    = pMap('Resonator conductor:gap ratio'); 
@@ -98,13 +105,30 @@ for tileY = 1:numTileY
         if not(isequal(size(feedClearanceX),[1,2])) feedClearanceX=feedClearanceX(tileIndex,:); end;
         feedLen         = pMap('Feedline length'); % Only applicable if doubleRes=false
         if not(isequal(size(feedLen),[1,1])) feedLen=feedLen(tileIndex); end;
+          % End connector
+        endConnect              = pMap('Add end connectors');
+        if not(isequal(size(endConnect),[1,1])) endConnect=endConnect(tileIndex); end;
+        endConnectRatioFac      = pMap('End connector ratio factor');
+        if not(isequal(size(endConnectRatioFac),[1,1])) endConnectRatioFac=endConnectRatioFac(tileIndex); end;
+        endConnectPadCondWidth  = pMap('End connector pad conductor width');
+        if not(isequal(size(endConnectPadCondWidth),[1,1])) endConnectPadCondWidth=endConnectPadCondWidth(tileIndex); end;
+        endConnectPadCondLen    = pMap('End connector pad conductor length');
+        if not(isequal(size(endConnectPadCondLen),[1,1])) endConnectPadCondLen=endConnectPadCondLen(tileIndex); end;
+        endConnectPadGapLen     = pMap('End connector pad gap length');
+        if not(isequal(size(endConnectPadGapLen),[1,1])) endConnectPadGapLen=endConnectPadGapLen(tileIndex); end;
+        endConnectExpanLen      = pMap('End connector expansion length');
+        if not(isequal(size(endConnectExpanLen),[1,1])) endConnectExpanLen=endConnectExpanLen(tileIndex); end;
           % Multi resonator
         doubleRes   = pMap('Allow two resonators');
         resDist     = pMap('Resonator X separation');
         
 % ------------------------------------------------------------------
-% -----------  Per tile parameter set END --------------------------
-% ------------------------------------------------------------------        
+% ----------- Per tile parameter set END ---------------------------
+% ------------------------------------------------------------------  
+
+% ------------------------------------------------------------------
+% ----------- Per resonator preperation START ----------------------
+% ------------------------------------------------------------------
         
         % Store polygons
         polygons = {};
@@ -182,7 +206,43 @@ for tileY = 1:numTileY
               % Combine
             quarterInner = [quarterURinnerGap;quarterLRinnerGap;quarterLLinnerGap;quarterULinnerGap];
             quarterOuter = [quarterURouterGap;quarterLRouterGap;quarterLLouterGap;quarterULouterGap];
-
+            
+            
+            endConnectRatioFac      = pMap('End connector ratio factor');
+            endConnectPadCondWidth  = pMap('End connector pad conductor width');
+            endConnectPadCondLen    = pMap('End connector pad conductor length');
+            endConnectPadGapLen     = pMap('End connector pad gap length');
+            endConnectExpanLen      = pMap('End connector expansion length');
+            
+            % Generate end connector components
+              % Useful params
+            yMidOff = (feedGap+feedCond+feedGap)/2; 
+            endConnectPadGapWidth = (endConnectPadCondWidth*endConnectRatioFac)/feedRatio;
+              % Points
+            point1  = [0,yMidOff-(feedCond/2)];
+            point2  = [endConnectExpanLen,(yMidOff-(endConnectPadCondWidth/2))];
+            point3  = [endConnectExpanLen+endConnectPadCondLen,(yMidOff-(endConnectPadCondWidth/2))];
+            point4  = [endConnectExpanLen+endConnectPadCondLen,(yMidOff+(endConnectPadCondWidth/2))];
+            point5  = [endConnectExpanLen,(yMidOff+(endConnectPadCondWidth/2))];
+            point6  = [0,yMidOff+(feedCond/2)];
+            point7  = [0,yMidOff+(feedCond/2)+feedGap];
+            point8  = [endConnectExpanLen,(yMidOff+(endConnectPadCondWidth/2)+endConnectPadGapWidth)];
+            point9  = [endConnectExpanLen+endConnectPadCondLen+endConnectPadGapLen,(yMidOff+(endConnectPadCondWidth/2)+endConnectPadGapWidth)];
+            point10 = [endConnectExpanLen+endConnectPadCondLen+endConnectPadGapLen,(yMidOff-(endConnectPadCondWidth/2)-endConnectPadGapWidth)];
+            point11 = [endConnectExpanLen,(yMidOff-(endConnectPadCondWidth/2)-endConnectPadGapWidth)];
+            point12 = [0,0];
+              % Combine all
+            endConnectorPoints = [point1;point2;point3;point4;point5;point6; ...
+                                  point7;point8;point9;point10;point11;point12];
+            
+% ------------------------------------------------------------------
+% ----------- Per resonator preperation END ------------------------
+% ------------------------------------------------------------------
+            
+% ------------------------------------------------------------------
+% ----------- Add components to polygons store START ---------------
+% ------------------------------------------------------------------ 
+            
             % Curved sections
             order = [2,1,3,4,2,1];
             xOff = [0,0,-horzLen-tile,-horzLen-tile,0,0];
@@ -265,9 +325,23 @@ for tileY = 1:numTileY
             feedUpper = [feedLower(1,:);feedLower(2,:)+feedGap+feedCond];
             polygons{k,m} = [feedLower(1,:);feedLower(2,:)]'; m=m+1;
             polygons{k,m} = [feedUpper(1,:);feedUpper(2,:)]'; m=m+1;
+            
+            % End Connectors
+            if endConnect
+                xOff=tile+feedClearanceX(k);
+                yOff=-(feedDist(k)+feedGap+feedCond+feedGap);
+                polygons{k,m} = [endConnectorPoints(:,1)+xOff,endConnectorPoints(:,2)+yOff]; m=m+1;
+                if not(doubleRes)
+                    polygons{k,m} = [(-endConnectorPoints(:,1))+xOff-feedLen,endConnectorPoints(:,2)+yOff]; m=m+1;
+                end
+            end
 
         end
 
+% ------------------------------------------------------------------
+% ----------- Add components to polygons store END -----------------
+% ------------------------------------------------------------------
+        
         % Add all polygons to figure/CleWin
         for obj = 1:length(polygons(:,1))
             % Remove empty elements
@@ -311,11 +385,7 @@ for tileY = 1:numTileY
 
                 if not(cleWin)
                     hold on;
-                    if length(data) == 4
-                        plot(x, y, 'x-');  
-                    else
-                        plot(x, y, '.');  
-                    end
+                    plot(x, y, '.-');  
                 else
                     polygon([x;y]')
                 end
