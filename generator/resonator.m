@@ -19,7 +19,7 @@ pMap('Position of extendable section')          = [0.3, 0.3];
   % Feedline
 pMap('Feedline conductor:gap ratio:')           = 9.065/5.0;
 pMap('Feedline gap width')                      = 10.0;                       
-pMap('Feedline conductor width')                = pMap('Feedline gap width')*pMap('Feedline conductor:gap ratio:') ;
+pMap('Feedline conductor width')                = pMap('Feedline gap width')*pMap('Feedline conductor:gap ratio:');
 pMap('Feedline-coupler distance')               = [20, 20];
 pMap('Feedline-coupler X clearance')            = [300, 300];
 pMap('Feedline length')                         = 800;  % Only applicable if not using two resonators
@@ -43,7 +43,7 @@ pMap('Number of tiles up')                      = 2;
 pMap('Number of tiles right')                   = 2;
 pMap('Tile size')                               = [9000,4000];
   % Substrate
-pMap('Use global substrate')                    = true;
+pMap('Use global substrate')                    = false;
 pMap('Substrate padding ([b,t,l,r])')           = [1,1,1,1]*0;
   % CleWin
 pMap('Using CleWin')                            = false;
@@ -119,7 +119,7 @@ for tileY = 1:numTileY
         totalLen    = pMap('Resonator total length'); % Only applicable if midCurves=true
         if not(isequal(size(totalLen),[1,2])) totalLen=totalLen(tileIndex,:); end;
             % ---
-        midCurves   = pMap('Allow extenable section');
+        midCurves   = pMap('Use extenable section');
         if not(isequal(size(midCurves),[1,2])) midCurves=midCurves(tileIndex,:); end;
         vertRatio   = pMap('Position of extendable section');
         if not(isequal(size(vertRatio),[1,2])) vertRatio=vertRatio(tileIndex,:); end;
@@ -137,7 +137,7 @@ for tileY = 1:numTileY
         feedLen         = pMap('Feedline length'); % Only applicable if doubleRes=false
         if not(isequal(size(feedLen),[1,1])) feedLen=feedLen(tileIndex); end;
           % End connector
-        endConnect              = pMap('Add end connectors');
+        endConnect              = pMap('Use end connectors');
         if not(isequal(size(endConnect),[1,1])) endConnect=endConnect(tileIndex); end;
         endConnectRatioFac      = pMap('End connector ratio factor');
         if not(isequal(size(endConnectRatioFac),[1,1])) endConnectRatioFac=endConnectRatioFac(tileIndex); end;
@@ -150,7 +150,7 @@ for tileY = 1:numTileY
         endConnectExpanLen      = pMap('End connector expansion length');
         if not(isequal(size(endConnectExpanLen),[1,1])) endConnectExpanLen=endConnectExpanLen(tileIndex); end;
           % Multi resonator
-        doubleRes   = pMap('Allow two resonators');
+        doubleRes   = pMap('Use two resonators');
         if not(isequal(size(doubleRes),[1,1])) doubleRes=doubleRes(tileIndex); end;
         resDist     = pMap('Resonator X separation');
         if not(isequal(size(resDist),[1,1])) resDist=resDist(tileIndex); end;
