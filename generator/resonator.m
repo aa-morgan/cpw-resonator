@@ -87,13 +87,17 @@ for tileY = 1:numTileY
         if not(isequal(size(vertRatio),[1,2])) vertRatio=vertRatio(tileIndex,:); end;
           % Feedline
         feedRatio       = pMap('Feedline conductor:gap ratio:');
-        feedGap         = pMap('Feedline gap width');                       
+        if not(isequal(size(feedRatio),[1,1])) feedRatio=feedRatio(tileIndex); end;
+        feedGap         = pMap('Feedline gap width');
+        if not(isequal(size(feedGap),[1,1])) feedGap=feedGap(tileIndex); end;
         feedCond        = pMap('Feedline conductor width');
+        if not(isequal(size(feedCond),[1,1])) feedCond=feedCond(tileIndex); end;
         feedDist        = pMap('Feedline-coupler distance');
         if not(isequal(size(feedDist),[1,2])) feedDist=feedDist(tileIndex,:); end;
         feedClearanceX  = pMap('Feedline-coupler X clearance');
         if not(isequal(size(feedClearanceX),[1,2])) feedClearanceX=feedClearanceX(tileIndex,:); end;
         feedLen         = pMap('Feedline length'); % Only applicable if doubleRes=false
+        if not(isequal(size(feedLen),[1,1])) feedLen=feedLen(tileIndex); end;
           % Multi resonator
         doubleRes   = pMap('Allow two resonators');
         resDist     = pMap('Resonator X separation');
