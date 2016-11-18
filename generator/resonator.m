@@ -25,7 +25,7 @@ pMap('Feedline-coupler X clearance')            = [300, 300];
 pMap('Feedline length')                         = 800;  % Only applicable if not using two resonators
   % End connector
 pMap('Add end connectors')                      = true;
-pMap('End connector ratio factor')              = 1.0/1.1031;
+pMap('End connector ratio factor')              = 1.1031;
 pMap('End connector pad conductor width')       = 300;
 pMap('End connector pad conductor length')      = 400;
 pMap('End connector pad gap length')            = 150;
@@ -33,8 +33,13 @@ pMap('End connector expansion length')          = 610;
   % Multi resonator
 pMap('Allow two resonators')                    = true;
 pMap('Resonator X separation')                  = 5000;
+  % Labels
+pMap('Use labels')                              = true;
+pMap('Labels')                                  = {'A1','A2','A3','A4'};
+pMap('Labels offset ([x,y])')                   = [0,0];
+pMap('Labels size')                             = 0.1;
   % Tiling
-pMap('Number of tiles up')                      = 1;
+pMap('Number of tiles up')                      = 2;
 pMap('Number of tiles right')                   = 2;
 pMap('Tile size')                               = [9000,4000];
   % Substrate
@@ -149,6 +154,15 @@ for tileY = 1:numTileY
         if not(isequal(size(doubleRes),[1,1])) doubleRes=doubleRes(tileIndex); end;
         resDist     = pMap('Resonator X separation');
         if not(isequal(size(resDist),[1,1])) resDist=resDist(tileIndex); end;
+          % Labels
+        useLabels       = pMap('Use labels');
+        if not(isequal(size(useLabels),[1,1])) useLabels=useLabels(tileIndex); end;
+        labels          = pMap('Labels');
+        if not(isequal(size(labels),[1,1])) labels=labels(tileIndex); end;
+        labelsOffset    = pMap('Labels offset ([x,y])');
+        if not(isequal(size(labelsOffset),[1,2])) labelsOffset=labelsOffset(tileIndex,:); end;
+        labelsSize      = pMap('Labels size');
+        if not(isequal(size(labelsSize),[1,1])) labelsSize=labelsSize(tileIndex); end;
         
 % ------------------------------------------------------------------
 % ----------- Per tile parameter set END ---------------------------
@@ -245,7 +259,7 @@ for tileY = 1:numTileY
             % Generate end connector components
               % Useful params
             yMidOff = (feedGap+feedCond+feedGap)/2; 
-            endConnectPadGapWidth = (endConnectPadCondWidth*endConnectRatioFac)/feedRatio;
+            endConnectPadGapWidth = (endConnectPadCondWidth)/(feedRatio*endConnectRatioFac);
               % Points
             point1  = [0,yMidOff-(feedCond/2)];
             point2  = [endConnectExpanLen,(yMidOff-(endConnectPadCondWidth/2))];
@@ -362,6 +376,18 @@ for tileY = 1:numTileY
                 if not(doubleRes)
                     polygons{k,m} = [(-endConnectorPoints(:,1))+xOff-feedLen,endConnectorPoints(:,2)+yOff]; m=m+1;
                 end
+            end
+            
+            % Labels
+            if cleWin && useLabels
+                % Define a transformation matrix:
+                xOff=-2500;
+                yOff=500;
+                x = ((tileX-1)*tileSize(1))+labelsOffset(1)+xOff;
+                y = ((tileY-1)*tileSize(2))+labelsOffset(2)+yOff;
+                m = [labelsSize 0 x; 0 labelsSize y; 0 0 1];
+                % Add labels:
+                text(labels{:},m);
             end
 
         end
