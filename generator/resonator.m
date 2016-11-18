@@ -34,9 +34,12 @@ pMap('End connector expansion length')          = 610;
 pMap('Allow two resonators')                    = true;
 pMap('Resonator X separation')                  = 5000;
   % Tiling
-pMap('Number of tiles up')                      = 3;
-pMap('Number of tiles right')                   = 3;
+pMap('Number of tiles up')                      = 1;
+pMap('Number of tiles right')                   = 2;
 pMap('Tile size')                               = [9000,4000];
+  % Substrate
+pMap('Use global substrate')                    = true;
+pMap('Substrate padding ([b,t,l,r])')           = [1,1,1,1]*0;
   % CleWin
 pMap('Using CleWin')                            = false;
   % General
@@ -50,6 +53,9 @@ pMap('Print information')                       = false;
 numTileX = pMap('Number of tiles right');
 numTileY = pMap('Number of tiles up');
 tileSize = pMap('Tile size');
+  % Substrate
+globalSub  = pMap('Use global substrate');
+subPadding = pMap('Substrate padding ([b,t,l,r])');
   % CleWin
 cleWin  = pMap('Using CleWin');
   % General
@@ -57,6 +63,26 @@ verbose = pMap('Print information');
 
 % Start figure
 if not(cleWin) figure('Position', [0, 0, 1800, 600]); end;
+
+% Run once (regardless of the number of tiles)
+  % Global Substrate
+if globalSub
+    xOff=-7000;
+    yOff=-2000;
+    globalSubCorners = [[0-subPadding(3),0-subPadding(1)]; ...
+                       [(tileSize(1)*numTileX)+subPadding(4),0-subPadding(1)]; ...
+                       [(tileSize(1)*numTileX)+subPadding(4),(tileSize(2)*numTileY)+subPadding(2)]; ...
+                       [0-subPadding(1),(tileSize(2)*numTileY)+subPadding(2)]];
+    data = [globalSubCorners(:,1)+xOff, globalSubCorners(:,2)+yOff];
+   
+    if not(cleWin)
+        hold on;
+        plot(data(:,1), data(:,2), '.-');  
+    else
+        polygon([data(:,1),data(:,2)])
+    end
+end
+
 
 % Loop per tile
 for tileY = 1:numTileY
