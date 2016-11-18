@@ -14,7 +14,7 @@ pMap('Resonator interaction length')            = [5000,5000];%[[100:500:4500];[
 pMap('Resonator feedline-interaction distance') = [1300, 1300];
 pMap('Resonator total length')                  = [7624, 7624]; % Only applicable if using extendable sections
     % ---
-pMap('Allow extenable section')                 = [true, true];
+pMap('Use extenable section')                   = [true, true];
 pMap('Position of extendable section')          = [0.3, 0.3];
   % Feedline
 pMap('Feedline conductor:gap ratio:')           = 9.065/5.0;
@@ -24,14 +24,14 @@ pMap('Feedline-coupler distance')               = [20, 20];
 pMap('Feedline-coupler X clearance')            = [300, 300];
 pMap('Feedline length')                         = 800;  % Only applicable if not using two resonators
   % End connector
-pMap('Add end connectors')                      = true;
+pMap('Use end connectors')                      = true;
 pMap('End connector ratio factor')              = 1.1031;
 pMap('End connector pad conductor width')       = 300;
 pMap('End connector pad conductor length')      = 400;
 pMap('End connector pad gap length')            = 150;
 pMap('End connector expansion length')          = 610;
   % Multi resonator
-pMap('Allow two resonators')                    = true;
+pMap('Use two resonators')                      = true;
 pMap('Resonator X separation')                  = 5000;
   % Labels
 pMap('Use labels')                              = true;
