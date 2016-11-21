@@ -42,6 +42,10 @@ pMap('Labels size')                             = 0.1;
 pMap('Number of tiles up')                      = 2;
 pMap('Number of tiles right')                   = 2;
 pMap('Tile size')                               = [9000,4000];
+  % Alignment marks
+pMap('Use alignment marks')                     = true;
+pMap('Alignment mark size [length, width]')     = [100,10];
+pMap('Alignment offset [x, y]')                 = [0,0];
   % Substrate
 pMap('Use global substrate')                    = false;
 pMap('Substrate padding ([b,t,l,r])')           = [1,1,1,1]*0;
@@ -49,8 +53,9 @@ pMap('Substrate padding ([b,t,l,r])')           = [1,1,1,1]*0;
 pMap('Using CleWin')                            = false;
   % General
 pMap('Print information')                       = false;
+
 % ------------------------------------------------------------------
-% ----------- Parameter set END ------------------------------------
+% ----------- Run once ---------------------------------------------
 % ------------------------------------------------------------------
 
 % Single set parameters
@@ -58,6 +63,10 @@ pMap('Print information')                       = false;
 numTileX = pMap('Number of tiles right');
 numTileY = pMap('Number of tiles up');
 tileSize = pMap('Tile size');
+  % Alignment marks
+alignMarks       = pMap('Use alignment marks');
+alignMarksSize   = pMap('Alignment mark size [length, width]');
+alignMarksOffset = pMap('Alignment offset [x, y]')
   % Substrate
 globalSub  = pMap('Use global substrate');
 subPadding = pMap('Substrate padding ([b,t,l,r])');
@@ -87,7 +96,30 @@ if globalSub
         polygon([data(:,1),data(:,2)])
     end
 end
-
+  % Generate alignment mark
+    % Points
+point1  = [0,0];
+point2  = [-alignMarksSize(1),0];
+point3  = [-alignMarksSize(1),alignMarksSize(2)];
+point4  = [0,alignMarksSize(2)];
+point5  = [0,sum(alignMarksSize)];
+point6  = [alignMarksSize(2),sum(alignMarksSize)];
+point7  = [alignMarksSize(2),alignMarksSize(2)];
+point8  = [sum(alignMarksSize),alignMarksSize(2)];
+point9  = [sum(alignMarksSize),0];
+point10 = [alignMarksSize(2),0];
+point11 = [alignMarksSize(2),-alignMarksSize(1)];
+point12 = [0,-alignMarksSize(1)];
+    % Combine points
+alignMarkPoints = [point1;point2;point3;point4;point5;point6; ...
+                   point7;point8;point9;point10;point11;point12];
+    % Shift to center
+alignMarkPoints =  [alignMarkPoints(:,1)-alignMarksSize(2)/2, ...
+                    alignMarkPoints(:,2)-alignMarksSize(2)/2];
+                  
+% ------------------------------------------------------------------
+% ----------- Per tile ---------------------------------------------
+% ------------------------------------------------------------------
 
 % Loop per tile
 for tileY = 1:numTileY
@@ -95,8 +127,11 @@ for tileY = 1:numTileY
         % Tile index
         tileIndex=((tileY-1)*numTileY)+tileX;
         
+        tileOffsetX = (tileX-1)*tileSize(1);
+        tileOffsetY = (tileY-1)*tileSize(2);
+        
 % ------------------------------------------------------------------
-% ----------- Per tile parameter set START -------------------------
+% ----------- Per tile - Parameter set -----------------------------
 % ------------------------------------------------------------------
             % Resonator 
         resRatio    = pMap('Resonator conductor:gap ratio'); 
@@ -163,23 +198,56 @@ for tileY = 1:numTileY
         if not(isequal(size(labelsOffset),[1,2])) labelsOffset=labelsOffset(tileIndex,:); end;
         labelsSize      = pMap('Labels size');
         if not(isequal(size(labelsSize),[1,1])) labelsSize=labelsSize(tileIndex); end;
-        
-% ------------------------------------------------------------------
-% ----------- Per tile parameter set END ---------------------------
-% ------------------------------------------------------------------  
 
 % ------------------------------------------------------------------
-% ----------- Per resonator preperation START ----------------------
-% ------------------------------------------------------------------
-        
-        % Store polygons
+% ----------- Per tile - Add components to polygons store ----------
+% ------------------------------------------------------------------ 
+
+        % Store polygons. Empty for each new tile.
         polygons = {};
+        
+        % Add alignment marks
+          % Polygon store indicies, m, k (k=1: first resonator, k=2: second resonator)
+        m = 1;
+        k = 3;
+          % Add required marks to tile
+          xOff=alignMarksOffset(1)-7000;
+          yOff=alignMarksOffset(2)-tileSize(2)/2;
+            % Always add top right
+        polygons{k,m} = [alignMarkPoints(:,1)+tileSize(1)+xOff,alignMarkPoints(:,2)+tileSize(2)+yOff]; m=m+1;
+        if tileX == 1 % Add top left
+            polygons{k,m} = [alignMarkPoints(:,1)+xOff,alignMarkPoints(:,2)+tileSize(2)+yOff]; m=m+1;
+        end
+        if tileY == 1 % Add bottom right
+            polygons{k,m} = [alignMarkPoints(:,1)+tileSize(1)+xOff,alignMarkPoints(:,2)+yOff]; m=m+1;
+        end
+        if tileX == 1 && tileY == 1 % Add bottom left
+            polygons{k,m} = [alignMarkPoints(:,1)+xOff,alignMarkPoints(:,2)+yOff]; m=m+1;
+        end
+        
+        % Labels
+        if cleWin && useLabels
+            % Define a transformation matrix:
+            xOff=-2500;
+            yOff=500;
+            x = tileOffsetX+labelsOffset(1)+xOff;
+            y = tileOffsetY+labelsOffset(2)+yOff;
+            m = [labelsSize 0 x; 0 labelsSize y; 0 0 1];
+            % Add labels:
+            text(labels{:},m);
+        end
+
+% ------------------------------------------------------------------
+% ----------- Per tile - Per resonator -----------------------------
+% ------------------------------------------------------------------  
 
         % Start Object generation
         if doubleRes numRes=2; else numRes=1; end;
         for k = 1:numRes
-            % Polygons index;
-            m = 1;
+            
+% ------------------------------------------------------------------
+% ----------- Per tile - Per resonator - Prepare common objects ----
+% ------------------------------------------------------------------           
 
             % Derived parameters
             innerRadiusInnerGap=innerRadius(k);
@@ -276,14 +344,13 @@ for tileY = 1:numTileY
               % Combine all
             endConnectorPoints = [point1;point2;point3;point4;point5;point6; ...
                                   point7;point8;point9;point10;point11;point12];
-            
-% ------------------------------------------------------------------
-% ----------- Per resonator preperation END ------------------------
-% ------------------------------------------------------------------
-            
-% ------------------------------------------------------------------
-% ----------- Add components to polygons store START ---------------
-% ------------------------------------------------------------------ 
+                      
+% --------------------------------------------------------------------------
+% ----------- Per tile - Per resonator - Add components to polygons store --
+% --------------------------------------------------------------------------
+
+            % Polygons index;
+            m = 1;
             
             % Curved sections
             order = [2,1,3,4,2,1];
@@ -377,23 +444,11 @@ for tileY = 1:numTileY
                     polygons{k,m} = [(-endConnectorPoints(:,1))+xOff-feedLen,endConnectorPoints(:,2)+yOff]; m=m+1;
                 end
             end
-            
-            % Labels
-            if cleWin && useLabels
-                % Define a transformation matrix:
-                xOff=-2500;
-                yOff=500;
-                x = ((tileX-1)*tileSize(1))+labelsOffset(1)+xOff;
-                y = ((tileY-1)*tileSize(2))+labelsOffset(2)+yOff;
-                m = [labelsSize 0 x; 0 labelsSize y; 0 0 1];
-                % Add labels:
-                text(labels{:},m);
-            end
-
+           
         end
-
+        
 % ------------------------------------------------------------------
-% ----------- Add components to polygons store END -----------------
+% ----------- Per tile - Copy polygons to corresponding canvas -----
 % ------------------------------------------------------------------
         
         % Add all polygons to figure/CleWin
@@ -434,8 +489,8 @@ for tileY = 1:numTileY
                 end
                 
                 % Apply X,Y shifts for specific tile
-                x = x + (tileX-1)*tileSize(1);
-                y = y + (tileY-1)*tileSize(2);
+                x = x + tileOffsetX;
+                y = y + tileOffsetY;
 
                 if not(cleWin)
                     hold on;
@@ -445,6 +500,10 @@ for tileY = 1:numTileY
                 end
             end
         end
+        
+% ------------------------------------------------------------------
+% ----------- Per tile - Display information -----------------------
+% ------------------------------------------------------------------
 
         % Display Info
         message = sprintf(strcat(...
