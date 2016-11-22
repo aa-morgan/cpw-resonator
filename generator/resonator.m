@@ -4,17 +4,17 @@
 pMap= containers.Map();
   % Resonator 
 pMap('Resonator conductor:gap ratio')           = [9.065/5.0, 9.065/5.0];
-pMap('Resonator gap width')                     = [5.0, 5.0];
+pMap('Resonator gap width')                     = [10.0, 10.0];
 pMap('Resonator conductor width')               = pMap('Resonator gap width').*pMap('Resonator conductor:gap ratio');
 pMap('Resonator curve inner radius')            = [40, 40];
 pMap('Resonator curve resolution')              = [54, 54];
     % ---
 pMap('Resonator coupler length')                = [120, 120];
 pMap('Resonator interaction length')            = [5000,5000];%[[100:500:4500];[100:500:4500]]';
-pMap('Resonator feedline-interaction distance') = [1300, 1300];
+pMap('Resonator feedline-interaction distance') = [2000, 2000];
 pMap('Resonator total length')                  = [7624, 7624]; % Only applicable if using extendable sections
     % ---
-pMap('Use extenable section')                   = [true, true];
+pMap('Use extenable section')                   = [false, false];
 pMap('Position of extendable section')          = [0.3, 0.3];
   % Feedline
 pMap('Feedline conductor:gap ratio:')           = 9.065/5.0;
@@ -25,7 +25,7 @@ pMap('Feedline-coupler X clearance')            = [300, 300];
 pMap('Feedline length')                         = 800;  % Only applicable if not using two resonators
   % End connector
 pMap('Use end connectors')                      = true;
-pMap('End connector ratio factor')              = 1.1031;
+pMap('End connector ratio factor')              = 1;%1.1031;
 pMap('End connector pad conductor width')       = 300;
 pMap('End connector pad conductor length')      = 400;
 pMap('End connector pad gap length')            = 150;
@@ -41,11 +41,19 @@ pMap('Labels size')                             = 0.1;
   % Tiling
 pMap('Number of tiles up')                      = 2;
 pMap('Number of tiles right')                   = 2;
-pMap('Tile size')                               = [9000,4000];
+pMap('Tile size')                               = [9000,5700];
   % Alignment marks
-pMap('Use alignment marks')                     = true;
+pMap('Use alignment marks')                     = false;
 pMap('Alignment mark size [length, width]')     = [100,10];
 pMap('Alignment offset [x, y]')                 = [0,0];
+  % Dicing boundaries
+pMap('Use dicing boundaries')                   = true;
+pMap('Wafer size (inch)')                       = 3;
+pMap('Wafer clearance (mm)')                    = (12.7-10);
+pMap('Dicing boundary width')                   = 500;
+pMap('Dicing boundary offset [x, y]')           = [0,0];
+pMap('Dicing tiling offset [x, y]')             = [3,6];
+pMap('Use wafer template')                      = false;
   % Substrate
 pMap('Use global substrate')                    = false;
 pMap('Substrate padding ([b,t,l,r])')           = [1,1,1,1]*0;
@@ -66,7 +74,15 @@ tileSize = pMap('Tile size');
   % Alignment marks
 alignMarks       = pMap('Use alignment marks');
 alignMarksSize   = pMap('Alignment mark size [length, width]');
-alignMarksOffset = pMap('Alignment offset [x, y]')
+alignMarksOffset = pMap('Alignment offset [x, y]');
+  % Dicing boundaries
+dicingBound        = pMap('Use dicing boundaries');
+waferSize          = pMap('Wafer size (inch)');
+waferClearance     = pMap('Wafer clearance (mm)');
+dicingBoundWidth   = pMap('Dicing boundary width');
+dicingBoundOffset  = pMap('Dicing boundary offset [x, y]');
+dicingTilingOffset = pMap('Dicing tiling offset [x, y]');
+showWafer          = pMap('Use wafer template');
   % Substrate
 globalSub  = pMap('Use global substrate');
 subPadding = pMap('Substrate padding ([b,t,l,r])');
@@ -96,26 +112,91 @@ if globalSub
         polygon([data(:,1),data(:,2)])
     end
 end
+
   % Generate alignment mark
-    % Points
-point1  = [0,0];
-point2  = [-alignMarksSize(1),0];
-point3  = [-alignMarksSize(1),alignMarksSize(2)];
-point4  = [0,alignMarksSize(2)];
-point5  = [0,sum(alignMarksSize)];
-point6  = [alignMarksSize(2),sum(alignMarksSize)];
-point7  = [alignMarksSize(2),alignMarksSize(2)];
-point8  = [sum(alignMarksSize),alignMarksSize(2)];
-point9  = [sum(alignMarksSize),0];
-point10 = [alignMarksSize(2),0];
-point11 = [alignMarksSize(2),-alignMarksSize(1)];
-point12 = [0,-alignMarksSize(1)];
-    % Combine points
-alignMarkPoints = [point1;point2;point3;point4;point5;point6; ...
-                   point7;point8;point9;point10;point11;point12];
-    % Shift to center
-alignMarkPoints =  [alignMarkPoints(:,1)-alignMarksSize(2)/2, ...
-                    alignMarkPoints(:,2)-alignMarksSize(2)/2];
+if alignMarks
+        % Points
+    point1  = [0,0];
+    point2  = [-alignMarksSize(1),0];
+    point3  = [-alignMarksSize(1),alignMarksSize(2)];
+    point4  = [0,alignMarksSize(2)];
+    point5  = [0,sum(alignMarksSize)];
+    point6  = [alignMarksSize(2),sum(alignMarksSize)];
+    point7  = [alignMarksSize(2),alignMarksSize(2)];
+    point8  = [sum(alignMarksSize),alignMarksSize(2)];
+    point9  = [sum(alignMarksSize),0];
+    point10 = [alignMarksSize(2),0];
+    point11 = [alignMarksSize(2),-alignMarksSize(1)];
+    point12 = [0,-alignMarksSize(1)];
+        % Combine points
+    alignMarkPoints = [point1;point2;point3;point4;point5;point6; ...
+                       point7;point8;point9;point10;point11;point12];
+        % Shift to center
+    alignMarkPoints =  [alignMarkPoints(:,1)-alignMarksSize(2)/2, ...
+                        alignMarkPoints(:,2)-alignMarksSize(2)/2];  
+end           
+                
+  % Dicing boundaries
+if dicingBound
+    dicingGridSize = ((waferSize*25.4)+(2*waferClearance))*1000;
+    numDiceBoundX = floor(dicingGridSize/tileSize(1))+1;
+    numDiceBoundY = floor(dicingGridSize/tileSize(2))+1;
+    
+    xOff=alignMarksOffset(1)-7000;
+    yOff=alignMarksOffset(2)-tileSize(2)/2;
+
+    % Store polygons.
+    polygons = {};
+    
+    for i = 1:numDiceBoundX
+        point1 = [dicingBoundWidth+((i-1)*tileSize(1)),0];
+        point2 = [dicingBoundWidth+((i-1)*tileSize(1)),dicingGridSize];
+        point3 = [0+((i-1)*tileSize(1)),dicingGridSize];
+        point4 = [0+((i-1)*tileSize(1)),0];
+        polygons{end+1} = [point1;point2;point3;point4];
+    end
+
+    for i = 1:numDiceBoundY
+        point1 = [0,0+((i-1)*tileSize(2))];
+        point2 = [dicingGridSize,0+((i-1)*tileSize(2))];
+        point3 = [dicingGridSize,dicingBoundWidth+((i-1)*tileSize(2))];
+        point4 = [0,dicingBoundWidth+((i-1)*tileSize(2))];
+        polygons{end+1} = [point1;point2;point3;point4];
+    end
+
+    % Add dicing grid polygons to figure/CleWin
+    for i = 1:length(polygons)
+        data = polygons{i};
+        x = data(:,1)';
+        y = data(:,2)';
+        
+        x = x - (dicingBoundWidth/2) + xOff - (tileSize(1)*dicingTilingOffset(1));
+        y = y - (dicingBoundWidth/2) + yOff - (tileSize(2)*dicingTilingOffset(2));
+
+        if not(cleWin)
+            hold on;
+            plot(x, y, '.-');  
+        else
+            polygon([x;y]')
+        end
+    end
+    
+    if showWafer
+        totXoff = -(dicingBoundWidth/2) + xOff - (tileSize(1)*dicingTilingOffset(1));
+        totYoff = -(dicingBoundWidth/2) + yOff - (tileSize(2)*dicingTilingOffset(2));
+        origin=[(dicingGridSize/2)+totXoff,(dicingGridSize/2)+totYoff];
+        r=waferSize*25.4*1000/2;
+        if cleWin
+            circle(origin(1), origin(2), r);
+        else
+            ang=[0:0.01:2*pi]; 
+            xp=r*cos(ang);
+            yp=r*sin(ang);
+            hold on;
+            plot(origin(1)+xp,origin(2)+yp, '--');
+        end
+    end
+end
                   
 % ------------------------------------------------------------------
 % ----------- Per tile ---------------------------------------------
@@ -207,22 +288,24 @@ for tileY = 1:numTileY
         polygons = {};
         
         % Add alignment marks
-          % Polygon store indicies, m, k (k=1: first resonator, k=2: second resonator)
-        m = 1;
-        k = 3;
-          % Add required marks to tile
-          xOff=alignMarksOffset(1)-7000;
-          yOff=alignMarksOffset(2)-tileSize(2)/2;
-            % Always add top right
-        polygons{k,m} = [alignMarkPoints(:,1)+tileSize(1)+xOff,alignMarkPoints(:,2)+tileSize(2)+yOff]; m=m+1;
-        if tileX == 1 % Add top left
-            polygons{k,m} = [alignMarkPoints(:,1)+xOff,alignMarkPoints(:,2)+tileSize(2)+yOff]; m=m+1;
-        end
-        if tileY == 1 % Add bottom right
-            polygons{k,m} = [alignMarkPoints(:,1)+tileSize(1)+xOff,alignMarkPoints(:,2)+yOff]; m=m+1;
-        end
-        if tileX == 1 && tileY == 1 % Add bottom left
-            polygons{k,m} = [alignMarkPoints(:,1)+xOff,alignMarkPoints(:,2)+yOff]; m=m+1;
+        if alignMarks
+              % Polygon store indicies, m, k (k=1: first resonator, k=2: second resonator)
+            m = 1;
+            k = 3;
+              % Add required marks to tile
+            xOff=alignMarksOffset(1)-7000;
+            yOff=alignMarksOffset(2)-tileSize(2)/2;
+                % Always add top right
+            polygons{k,m} = [alignMarkPoints(:,1)+tileSize(1)+xOff,alignMarkPoints(:,2)+tileSize(2)+yOff]; m=m+1;
+            if tileX == 1 % Add top left
+                polygons{k,m} = [alignMarkPoints(:,1)+xOff,alignMarkPoints(:,2)+tileSize(2)+yOff]; m=m+1;
+            end
+            if tileY == 1 % Add bottom right
+                polygons{k,m} = [alignMarkPoints(:,1)+tileSize(1)+xOff,alignMarkPoints(:,2)+yOff]; m=m+1;
+            end
+            if tileX == 1 && tileY == 1 % Add bottom left
+                polygons{k,m} = [alignMarkPoints(:,1)+xOff,alignMarkPoints(:,2)+yOff]; m=m+1;
+            end
         end
         
         % Labels
