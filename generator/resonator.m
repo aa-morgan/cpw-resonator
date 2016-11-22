@@ -41,7 +41,7 @@ pMap('Labels size')                             = 0.1;
   % Tiling
 pMap('Number of tiles up')                      = 2;
 pMap('Number of tiles right')                   = 2;
-pMap('Tile size')                               = [9000,5700];
+pMap('Tile size')                               = [10000,6400];
   % Alignment marks
 pMap('Use alignment marks')                     = false;
 pMap('Alignment mark size [length, width]')     = [100,10];
@@ -50,8 +50,8 @@ pMap('Alignment offset [x, y]')                 = [0,0];
 pMap('Use dicing boundaries')                   = true;
 pMap('Wafer size (inch)')                       = 3;
 pMap('Wafer clearance (mm)')                    = (12.7-10);
-pMap('Dicing boundary width')                   = 500;
-pMap('Dicing boundary offset [x, y]')           = [0,0];
+pMap('Dicing boundary width')                   = 1000;
+pMap('Dicing boundary offset [x, y]')           = [-500,0];
 pMap('Dicing tiling offset [x, y]')             = [3,6];
 pMap('Use wafer template')                      = false;
   % Substrate
@@ -170,8 +170,8 @@ if dicingBound
         x = data(:,1)';
         y = data(:,2)';
         
-        x = x - (dicingBoundWidth/2) + xOff - (tileSize(1)*dicingTilingOffset(1));
-        y = y - (dicingBoundWidth/2) + yOff - (tileSize(2)*dicingTilingOffset(2));
+        x = x - (dicingBoundWidth/2) + xOff - (tileSize(1)*dicingTilingOffset(1)) + dicingBoundOffset(1);
+        y = y - (dicingBoundWidth/2) + yOff - (tileSize(2)*dicingTilingOffset(2)) + dicingBoundOffset(2);
 
         if not(cleWin)
             hold on;
