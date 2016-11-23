@@ -7,7 +7,7 @@ pMap('Resonator conductor:gap ratio')           = [9.065/5.0, 9.065/5.0];
 pMap('Resonator gap width')                     = [10.0, 10.0];
 pMap('Resonator conductor width')               = pMap('Resonator gap width').*pMap('Resonator conductor:gap ratio');
 pMap('Resonator curve inner radius')            = [40, 40];
-pMap('Resonator curve resolution')              = [54, 54];
+pMap('Resonator curve resolution')              = [27, 27];
     % ---
 pMap('Resonator coupler length')                = [120, 120];
 pMap('Resonator interaction length')            = [5000,5000];%[[100:500:4500];[100:500:4500]]';
@@ -37,23 +37,23 @@ pMap('Resonator X separation')                  = 5000;
 pMap('Use labels')                              = true;
 pMap('Labels')                                  = {'A1','A2','A3','A4'};
 pMap('Labels offset ([x,y])')                   = [0,0];
-pMap('Labels size')                             = 0.1;
+pMap('Labels size')                             = 0.1;     
   % Tiling
 pMap('Number of tiles up')                      = 2;
 pMap('Number of tiles right')                   = 2;
-pMap('Tile size')                               = [10000,6400];
+pMap('Tile size')                               = [9000,6000];
   % Alignment marks
 pMap('Use alignment marks')                     = false;
 pMap('Alignment mark size [length, width]')     = [100,10];
 pMap('Alignment offset [x, y]')                 = [0,0];
   % Dicing boundaries
 pMap('Use dicing boundaries')                   = true;
-pMap('Wafer size (inch)')                       = 3;
-pMap('Wafer clearance (mm)')                    = (12.7-10);
-pMap('Dicing boundary width')                   = 1000;
-pMap('Dicing boundary offset [x, y]')           = [-500,0];
+pMap('Use wafer template')                      = true;
+pMap('Wafer size (mm)')                         = 100;      
+pMap('Wafer inner clearance (mm)')              = 5;
+pMap('Dicing boundary width')                   = 500;
+pMap('Dicing boundary offset [x, y]')           = [0,0];
 pMap('Dicing tiling offset [x, y]')             = [3,6];
-pMap('Use wafer template')                      = false;
   % Substrate
 pMap('Use global substrate')                    = false;
 pMap('Substrate padding ([b,t,l,r])')           = [1,1,1,1]*0;
@@ -77,12 +77,12 @@ alignMarksSize   = pMap('Alignment mark size [length, width]');
 alignMarksOffset = pMap('Alignment offset [x, y]');
   % Dicing boundaries
 dicingBound        = pMap('Use dicing boundaries');
-waferSize          = pMap('Wafer size (inch)');
-waferClearance     = pMap('Wafer clearance (mm)');
+showWafer          = pMap('Use wafer template');
+waferSize          = pMap('Wafer size (mm)');
+waferClearance     = pMap('Wafer inner clearance (mm)');
 dicingBoundWidth   = pMap('Dicing boundary width');
 dicingBoundOffset  = pMap('Dicing boundary offset [x, y]');
 dicingTilingOffset = pMap('Dicing tiling offset [x, y]');
-showWafer          = pMap('Use wafer template');
   % Substrate
 globalSub  = pMap('Use global substrate');
 subPadding = pMap('Substrate padding ([b,t,l,r])');
@@ -138,7 +138,7 @@ end
                 
   % Dicing boundaries
 if dicingBound
-    dicingGridSize = ((waferSize*25.4)+(2*waferClearance))*1000;
+    dicingGridSize = waferSize*1000;
     numDiceBoundX = floor(dicingGridSize/tileSize(1))+1;
     numDiceBoundY = floor(dicingGridSize/tileSize(2))+1;
     
@@ -181,11 +181,11 @@ if dicingBound
         end
     end
     
-    if showWafer
+    if showWafer                                                
         totXoff = -(dicingBoundWidth/2) + xOff - (tileSize(1)*dicingTilingOffset(1));
         totYoff = -(dicingBoundWidth/2) + yOff - (tileSize(2)*dicingTilingOffset(2));
         origin=[(dicingGridSize/2)+totXoff,(dicingGridSize/2)+totYoff];
-        r=waferSize*25.4*1000/2;
+        r=(waferSize*1000/2)-(waferClearance*1000);
         if cleWin
             circle(origin(1), origin(2), r);
         else
