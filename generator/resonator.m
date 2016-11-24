@@ -20,18 +20,25 @@ pMap('Position of extendable section')          = [0.3, 0.3];
 pMap('Feedline conductor:gap ratio:')           = 9.065/5.0;
 pMap('Feedline gap width')                      = 10.0;                       
 pMap('Feedline conductor width')                = pMap('Feedline gap width')*pMap('Feedline conductor:gap ratio:');
-pMap('Feedline-coupler distance')               = [20, 20];
-pMap('Feedline-coupler X clearance')            = [300, 300];
-pMap('Feedline length')                         = 800;  % Only applicable if not using two resonators
+pMap('Feedline-coupler distance')               = [100, 100];
+pMap('Feedline X clearance')                    = [0, 0];
+pMap('Feedline length')                         = 6000;  % Only applicable if not using two resonators
+    % ---
+pMap('Use feedline extenable section')          = true;  % Only applicable if not using two resonators
+pMap('Feedline extenable section distance')     = 3000;  % Only applicable if not using two resonators
+pMap('Feedline extenable section length')       = 500;   % Only applicable if not using two resonators
+pMap('Feedline extenable section X clearance')  = 500;   % Only applicable if not using two resonators
+pMap('Feedline curve inner radius')             = 40;    % Only applicable if not using two resonators
+pMap('Feedline curve resolution')               = 27;    % Only applicable if not using two resonators
   % End connector
 pMap('Use end connectors')                      = true;
-pMap('End connector ratio factor')              = 1;%1.1031;
+pMap('End connector ratio factor')              = 1;
 pMap('End connector pad conductor width')       = 300;
 pMap('End connector pad conductor length')      = 400;
 pMap('End connector pad gap length')            = 150;
 pMap('End connector expansion length')          = 610;
   % Multi resonator
-pMap('Use two resonators')                      = true;
+pMap('Use two resonators')                      = false;
 pMap('Resonator X separation')                  = 5000;
   % Labels
 pMap('Use labels')                              = true;
@@ -39,21 +46,21 @@ pMap('Labels')                                  = {'A1','A2','A3','A4'};
 pMap('Labels offset ([x,y])')                   = [0,0];
 pMap('Labels size')                             = 0.1;     
   % Tiling
-pMap('Number of tiles up')                      = 2;
-pMap('Number of tiles right')                   = 2;
+pMap('Number of tiles up')                      = 1;
+pMap('Number of tiles right')                   = 1;
 pMap('Tile size')                               = [9000,6000];
   % Alignment marks
 pMap('Use alignment marks')                     = false;
 pMap('Alignment mark size [length, width]')     = [100,10];
 pMap('Alignment offset [x, y]')                 = [0,0];
   % Dicing boundaries
-pMap('Use dicing boundaries')                   = true;
-pMap('Use wafer template')                      = true;
+pMap('Use dicing boundaries')                   = false;
+pMap('Use wafer template')                      = false;
 pMap('Wafer size (mm)')                         = 100;      
 pMap('Wafer inner clearance (mm)')              = 5;
 pMap('Dicing boundary width')                   = 500;
 pMap('Dicing boundary offset [x, y]')           = [0,0];
-pMap('Dicing tiling offset [x, y]')             = [3,6];
+pMap('Dicing tiling offset [x, y]')             = [0,0];
   % Substrate
 pMap('Use global substrate')                    = false;
 pMap('Substrate padding ([b,t,l,r])')           = [1,1,1,1]*0;
@@ -240,18 +247,30 @@ for tileY = 1:numTileY
         vertRatio   = pMap('Position of extendable section');
         if not(isequal(size(vertRatio),[1,2])) vertRatio=vertRatio(tileIndex,:); end;
           % Feedline
-        feedRatio       = pMap('Feedline conductor:gap ratio:');
+        feedRatio            = pMap('Feedline conductor:gap ratio:');
         if not(isequal(size(feedRatio),[1,1])) feedRatio=feedRatio(tileIndex); end;
-        feedGap         = pMap('Feedline gap width');
+        feedGap              = pMap('Feedline gap width');
         if not(isequal(size(feedGap),[1,1])) feedGap=feedGap(tileIndex); end;
-        feedCond        = pMap('Feedline conductor width');
+        feedCond             = pMap('Feedline conductor width');
         if not(isequal(size(feedCond),[1,1])) feedCond=feedCond(tileIndex); end;
-        feedDist        = pMap('Feedline-coupler distance');
+        feedDist             = pMap('Feedline-coupler distance');
         if not(isequal(size(feedDist),[1,2])) feedDist=feedDist(tileIndex,:); end;
-        feedClearanceX  = pMap('Feedline-coupler X clearance');
+        feedClearanceX       = pMap('Feedline X clearance');
         if not(isequal(size(feedClearanceX),[1,2])) feedClearanceX=feedClearanceX(tileIndex,:); end;
-        feedLen         = pMap('Feedline length'); % Only applicable if doubleRes=false
+        feedLen              = pMap('Feedline length'); % Only applicable if doubleRes=false
         if not(isequal(size(feedLen),[1,1])) feedLen=feedLen(tileIndex); end;
+        feedExtend           = pMap('Use feedline extenable section');
+        if not(isequal(size(feedExtend),[1,1])) feedExtend=feedExtend(tileIndex); end;
+        feedExtendDist       = pMap('Feedline extenable section distance');
+        if not(isequal(size(feedExtendDist),[1,1])) feedExtendDist=feedExtendDist(tileIndex); end;
+        feedExtendLen        = pMap('Feedline extenable section length');
+        if not(isequal(size(feedExtendLen),[1,1])) feedExtendLen=feedExtendLen(tileIndex); end;
+        feedExtendclearanceX = pMap('Feedline extenable section X clearance');
+        if not(isequal(size(feedExtendclearanceX),[1,1])) feedExtendclearanceX=feedExtendclearanceX(tileIndex); end;
+        feedExtendCurveRad   = pMap('Feedline curve inner radius');
+        if not(isequal(size(feedExtendCurveRad),[1,1])) feedExtendCurveRad=feedExtendCurveRad(tileIndex); end;
+        feedExtendCurveRes   = pMap('Feedline curve resolution');
+        if not(isequal(size(feedExtendCurveRes),[1,1])) feedExtendCurveRes=feedExtendCurveRes(tileIndex); end;
           % End connector
         endConnect              = pMap('Use end connectors');
         if not(isequal(size(endConnect),[1,1])) endConnect=endConnect(tileIndex); end;
@@ -333,6 +352,7 @@ for tileY = 1:numTileY
 % ------------------------------------------------------------------           
 
             % Derived parameters
+              % Resonator
             innerRadiusInnerGap=innerRadius(k);
             outerRadiusInnerGap=innerRadiusInnerGap+resGap(k);
             innerRadiusOuterGap=outerRadiusInnerGap+resCond(k);
@@ -340,6 +360,14 @@ for tileY = 1:numTileY
             tile = outerRadiusOuterGap;
             tileShort = tile-innerRadiusInnerGap;
             tileLong  = tile-tileShort;
+              % Feedline
+            innerRadiusInnerGapFeed=feedExtendCurveRad;
+            outerRadiusInnerGapFeed=innerRadiusInnerGapFeed+feedGap;
+            innerRadiusOuterGapFeed=outerRadiusInnerGapFeed+feedCond;
+            outerRadiusOuterGapFeed=innerRadiusOuterGapFeed+feedGap;
+            tileFeed = outerRadiusOuterGapFeed;
+            tileShortFeed = tileFeed-innerRadiusInnerGapFeed;
+            tileLongFeed  = tileFeed-tileShortFeed;
 
             if midCurves(k) numCurved = 6; else numCurved = 2;end;
 
@@ -364,10 +392,10 @@ for tileY = 1:numTileY
 
             % Overwrite feedline lengths if doubleRed is on
             if doubleRes
-                feedLen = ((resDist/2)+feedClearanceX(k)+tile);
+                nFeedLen = ((resDist/2)+feedClearanceX(k)+tile);
             end
 
-            % Generate curved components
+            % Generate resonator curved components
             for i = 0:3
                 start=i*0.5*pi;
                 angles = linspace(0,0.25*2*pi,steps(k));
@@ -400,12 +428,38 @@ for tileY = 1:numTileY
             quarterInner = [quarterURinnerGap;quarterLRinnerGap;quarterLLinnerGap;quarterULinnerGap];
             quarterOuter = [quarterURouterGap;quarterLRouterGap;quarterLLouterGap;quarterULouterGap];
             
-            
-            endConnectRatioFac      = pMap('End connector ratio factor');
-            endConnectPadCondWidth  = pMap('End connector pad conductor width');
-            endConnectPadCondLen    = pMap('End connector pad conductor length');
-            endConnectPadGapLen     = pMap('End connector pad gap length');
-            endConnectExpanLen      = pMap('End connector expansion length');
+            % Generate feedline curved components
+            for i = 0:3
+                start=i*0.5*pi;
+                angles = linspace(0,0.25*2*pi,feedExtendCurveRes);
+                pt =[cos(angles-start);sin(angles-start)];
+
+                rInner1=outerRadiusInnerGapFeed*pt;
+                rInner2=innerRadiusInnerGapFeed*pt;
+                rInner=cat(2,rInner1,flip(rInner2,2));
+
+                rOuter1=outerRadiusOuterGapFeed*pt;
+                rOuter2=innerRadiusOuterGapFeed*pt;
+                rOuter=cat(2,rOuter1,flip(rOuter2,2));
+
+                if start == 0.0*pi % UR
+                    quarterURinnerGap = rInner;
+                    quarterURouterGap = rOuter;
+                elseif start == 0.5*pi % LR
+                    quarterLRinnerGap = [rInner(1,:);rInner(2,:)+outerRadiusOuterGapFeed];
+                    quarterLRouterGap = [rOuter(1,:);rOuter(2,:)+outerRadiusOuterGapFeed];   
+                elseif start == 1.0*pi % LL
+                    quarterLLinnerGap = [rInner(1,:)+outerRadiusOuterGapFeed;rInner(2,:)+outerRadiusOuterGapFeed];
+                    quarterLLouterGap = [rOuter(1,:)+outerRadiusOuterGapFeed;rOuter(2,:)+outerRadiusOuterGapFeed];
+                elseif start == 1.5*pi % UL
+                    quarterULinnerGap = [rInner(1,:)+outerRadiusOuterGapFeed;rInner(2,:)];
+                    quarterULouterGap = [rOuter(1,:)+outerRadiusOuterGapFeed;rOuter(2,:)];
+                end
+
+            end
+              % Combine
+            quarterInnerFeed = [quarterURinnerGap;quarterLRinnerGap;quarterLLinnerGap;quarterULinnerGap];
+            quarterOuterFeed = [quarterURouterGap;quarterLRouterGap;quarterLLouterGap;quarterULouterGap];
             
             % Generate end connector components
               % Useful params
@@ -435,12 +489,23 @@ for tileY = 1:numTileY
             % Polygons index;
             m = 1;
             
-            % Curved sections
+            % Resonator components
+            if feedExtend
+                xOffResGobal = -(feedExtendclearanceX) ...
+                    - (feedExtendLen+(2*tileLongFeed))/2 ...
+                    + (couplerLen(k)/2);
+                yOffResGobal = feedGap+feedCond+feedGap+feedExtendDist;
+            else
+                xOffResGobal = 0;
+                yOffResGobal = 0;
+            end
+            
+              % Curved sections
             order = [2,1,3,4,2,1];
-            xOff = [0,0,-horzLen-tile,-horzLen-tile,0,0];
+            xOff = [0,0,-horzLen-tile,-horzLen-tile,0,0]+xOffResGobal;
             yOff = [0,vert1Len+tile,vert1Len+tile+tileLong, ...
                 vert1Len+2*tile+tileLong,vert1Len+2*(tile+tileLong), ...
-                vert1Len+vert2Len+midCurves(k)*2*(tile+tileLong)+tile];
+                vert1Len+vert2Len+midCurves(k)*2*(tile+tileLong)+tile]+yOffResGobal;
             for i = 1:length(order)
                 if midCurves(k) || i == 1 || i == 6
                     indices = [2*(order(i)-1)+1:2*(order(i)-1)+2];
@@ -449,11 +514,11 @@ for tileY = 1:numTileY
                 end
             end
 
-            % Curve connectors
-              % Vert's
+              % Curve connectors
+                % Vert's
             for i = 1:2  
-                xOff=tileLong;
-                yOff=tile+((i-1)*(vertLen(1)+midCurves(k)*2*(tile+tileLong)));
+                xOff=tileLong+xOffResGobal;
+                yOff=tile+((i-1)*(vertLen(1)+midCurves(k)*2*(tile+tileLong)))+yOffResGobal;
                 vertLower = [[xOff+0,yOff+0]; ...
                               [xOff+0,yOff+vertLen(i)]; ...
                               [xOff+resGap(k),yOff+vertLen(i)]; ...
@@ -463,11 +528,11 @@ for tileY = 1:numTileY
                 polygons{k,m} = [vertUpper(1,:);vertUpper(2,:)]'; m=m+1;
             end
 
-              % Horz's
+                % Horz's
             if midCurves(k)
                 for i = 0:1 
-                    xOff=0;
-                    yOff=tile+vert1Len+tileLong+(i*(tile+tileLong));
+                    xOff=0+xOffResGobal;
+                    yOff=tile+vert1Len+tileLong+(i*(tile+tileLong))+yOffResGobal;
                     horzLower = [[xOff+0,yOff+0]; ...
                                   [xOff-horzLen,yOff+0]; ...
                                   [xOff-horzLen,yOff+resGap(k)]; ...
@@ -478,16 +543,16 @@ for tileY = 1:numTileY
                 end
             end
 
-            % Coupler
-            xOff=0;
-            yOff=0;
+              % Coupler
+            xOff=0+xOffResGobal;
+            yOff=0+yOffResGobal;
             couplerLower = [[xOff+0,yOff+0]; ...
                             [xOff-couplerLen(k),yOff+0]; ...
                             [xOff-couplerLen(k),yOff+resGap(k)]; ...
                             [xOff+0,yOff+resGap(k)]]';
             couplerUpper = [couplerLower(1,:);couplerLower(2,:)+resGap(k)+resCond(k)];
-            xOff=-couplerLen(k);
-            yOff=0;
+            xOff=-couplerLen(k)+xOffResGobal;
+            yOff=0+yOffResGobal;
             couplerEnd = [[xOff+0,yOff+0]; ...
                           [xOff-resGap(k),yOff+0]; ...
                           [xOff-resGap(k),yOff+resGap(k)+resCond(k)+resGap(k)]; ...
@@ -496,9 +561,9 @@ for tileY = 1:numTileY
             polygons{k,m} = [couplerUpper(1,:);couplerUpper(2,:)]'; m=m+1;
             polygons{k,m} = [couplerEnd(1,:);couplerEnd(2,:)]'; m=m+1;
 
-            % Interaction region
-            xOff=0;
-            yOff=vert1Len+vert2Len+(tileLong+tile)+midCurves(k)*2*(tileLong+tile);
+              % Interaction region
+            xOff=0+xOffResGobal;
+            yOff=vert1Len+vert2Len+(tileLong+tile)+midCurves(k)*2*(tileLong+tile)+yOffResGobal;
             horz2Lower = [[xOff+0,yOff+0]; ...
                           [xOff-intLen(k),yOff+0]; ...
                           [xOff-intLen(k),yOff+resGap(k)]; ...
@@ -508,23 +573,98 @@ for tileY = 1:numTileY
             polygons{k,m} = [horz2Upper(1,:);horz2Upper(2,:)]'; m=m+1;
 
             % Feedline
+              % Straight section
+            if feedExtend
+                nFeedLen = feedClearanceX(k) + feedExtendclearanceX;
+            end
             xOff=tile+feedClearanceX(k);
             yOff=-(feedDist(k)+feedGap+feedCond+feedGap);
-            feedLower = [[xOff+0,yOff+0]; ...
-                         [xOff-feedLen,yOff+0]; ...
-                         [xOff-feedLen,yOff+feedGap]; ...
-                         [xOff+0,yOff+feedGap]]';
+            feedLower = [[0,0]; ...
+                         [-nFeedLen,0]; ...
+                         [-nFeedLen,feedGap]; ...
+                         [0,feedGap]]';
             feedUpper = [feedLower(1,:);feedLower(2,:)+feedGap+feedCond];
-            polygons{k,m} = [feedLower(1,:);feedLower(2,:)]'; m=m+1;
-            polygons{k,m} = [feedUpper(1,:);feedUpper(2,:)]'; m=m+1;
+            polygons{k,m} = [feedLower(1,:)+xOff;feedLower(2,:)+yOff]'; m=m+1;
+            polygons{k,m} = [feedUpper(1,:)+xOff;feedUpper(2,:)+yOff]'; m=m+1;
+                       
+              % Extendable section
+            if feedExtend
+                xOffFeedGlobal = - (feedExtendclearanceX);
+                yOffFeedGlobal = - (feedDist(k)+feedGap+feedCond+feedGap);
+                % Curved secion
+                order = [2,4,1,3];
+                xOff = [-(feedExtendLen+tileFeed)-2*tileLongFeed, ...
+                        -(feedExtendLen+tileFeed)-tileLongFeed, ...
+                        -tileLongFeed,0]+xOffFeedGlobal;
+                yOff = [0,feedExtendDist+feedGap+feedCond+feedGap-tileLongFeed, ...
+                        feedExtendDist+feedGap+feedCond+feedGap-tileLongFeed,0]+yOffFeedGlobal;
+                for i = 1:length(order)
+                    indices = [2*(order(i)-1)+1:2*(order(i)-1)+2];
+                    polygons{k,m} = [quarterInnerFeed(indices(1),:,:)+xOff(i); ...
+                                     quarterInnerFeed(indices(2),:,:)+yOff(i)]'; m=m+1;
+                    polygons{k,m} = [quarterOuterFeed(indices(1),:,:)+xOff(i); ...
+                                     quarterOuterFeed(indices(2),:,:)+yOff(i)]'; m=m+1;
+                end
+                
+                % Straight section
+                  % Vert's
+                for i = 0:1  
+                    xOff=-(i*(feedExtendLen+tileFeed+tileLongFeed))+xOffFeedGlobal;
+                    yOff=feedGap+feedCond+feedGap+tileLongFeed+yOffFeedGlobal;
+                    vertRight = [[0,0]; ...
+                                [0,feedExtendDist-(2*tileLongFeed)]; ...
+                                [feedGap,feedExtendDist-(2*tileLongFeed)]; ...
+                                [feedGap,0]]';
+                    vertLeft = [vertRight(1,:)+feedCond+feedGap;vertRight(2,:)];
+                    polygons{k,m} = [vertLeft(1,:)+xOff;vertLeft(2,:)+yOff]'; m=m+1;
+                    polygons{k,m} = [vertRight(1,:)+xOff;vertRight(2,:)+yOff]'; m=m+1;
+                end
+
+                  % Horz's
+
+                xOff=-(feedExtendLen+tileLongFeed)+xOffFeedGlobal;
+                yOff=feedGap+feedCond+feedGap+feedExtendDist+yOffFeedGlobal;
+                horzLower = [[0,feedGap]; ...
+                             [feedExtendLen,feedGap]; ...
+                             [feedExtendLen,0]; ...
+                             [0,0];]';
+                horzUpper = [horzLower(1,:);horzLower(2,:)+feedGap+feedCond];
+                polygons{k,m} = [horzLower(1,:)+xOff;horzLower(2,:)+yOff]'; m=m+1;
+                polygons{k,m} = [horzUpper(1,:)+xOff;horzUpper(2,:)+yOff]'; m=m+1;
+
+                
+                
+            end
             
-            % End Connectors
+            % Second horzitonal section for use with extenable section
+            if feedExtend              
+                xOff=-feedLen+tile;
+                yOff=-(feedDist(k)+feedGap+feedCond+feedGap);
+                horzLen = feedLen-(feedExtendclearanceX+(2*(tileFeed+tileLongFeed))+feedExtendLen);
+                feedLower = [[0,0]; ...
+                             [horzLen,0]; ...
+                             [horzLen,feedGap]; ...
+                             [0,feedGap]]';
+                feedUpper = [feedLower(1,:);feedLower(2,:)+feedGap+feedCond];
+                polygons{k,m} = [feedLower(1,:)+xOff;feedLower(2,:)+yOff]'; m=m+1;
+                polygons{k,m} = [feedUpper(1,:)+xOff;feedUpper(2,:)+yOff]'; m=m+1;
+            end
+                
+              % End Connectors
+            if feedExtend
+                xOffExtra = -(feedLen- ...
+                    (feedExtendclearanceX+(2*tileLongFeed)+feedExtendLen))+nFeedLen...
+                    -(endConnectExpanLen+endConnectPadCondLen+endConnectPadGapLen)+tile;
+            else
+                xOffExtra=0;
+            end
+            
             if endConnect
                 xOff=tile+feedClearanceX(k);
                 yOff=-(feedDist(k)+feedGap+feedCond+feedGap);
                 polygons{k,m} = [endConnectorPoints(:,1)+xOff,endConnectorPoints(:,2)+yOff]; m=m+1;
                 if not(doubleRes)
-                    polygons{k,m} = [(-endConnectorPoints(:,1))+xOff-feedLen,endConnectorPoints(:,2)+yOff]; m=m+1;
+                    polygons{k,m} = [(-endConnectorPoints(:,1))+xOff-nFeedLen+xOffExtra,endConnectorPoints(:,2)+yOff]; m=m+1;
                 end
             end
            
