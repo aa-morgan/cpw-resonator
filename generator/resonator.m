@@ -20,15 +20,15 @@ pMap('Position of extendable section')          = [0.3, 0.3];
 pMap('Feedline conductor:gap ratio:')           = 9.065/5.0;
 pMap('Feedline gap width')                      = 10.0;                       
 pMap('Feedline conductor width')                = pMap('Feedline gap width')*pMap('Feedline conductor:gap ratio:');
-pMap('Feedline-coupler distance')               = [100, 100];
+pMap('Feedline-coupler distance')               = [40, 40];
 pMap('Feedline X clearance')                    = [0, 0];
 pMap('Feedline length')                         = 6000;  % Only applicable if not using two resonators
     % ---
 pMap('Use feedline extenable section')          = true;  % Only applicable if not using two resonators
-pMap('Feedline extenable section distance')     = 3000;  % Only applicable if not using two resonators
+pMap('Feedline extenable section distance')     = 2000;  % Only applicable if not using two resonators
 pMap('Feedline extenable section length')       = 500;   % Only applicable if not using two resonators
 pMap('Feedline extenable section X clearance')  = 500;   % Only applicable if not using two resonators
-pMap('Feedline curve inner radius')             = 40;    % Only applicable if not using two resonators
+pMap('Feedline curve inner radius')             = 60;    % Only applicable if not using two resonators
 pMap('Feedline curve resolution')               = 27;    % Only applicable if not using two resonators
   % End connector
 pMap('Use end connectors')                      = true;
@@ -39,7 +39,7 @@ pMap('End connector pad gap length')            = 150;
 pMap('End connector expansion length')          = 610;
   % Multi resonator
 pMap('Use two resonators')                      = false;
-pMap('Resonator X separation')                  = 5000;
+pMap('Resonator X separation')                  = pMap('Feedline length');
   % Labels
 pMap('Use labels')                              = true;
 pMap('Labels')                                  = {'A1','A2','A3','A4'};
@@ -390,8 +390,10 @@ for tileY = 1:numTileY
                 mTotalLen(k) = numCurved*curvedPathLen+vert1Len+vert2Len+couplerLen(k)+intLen(k);
             end
 
-            % Overwrite feedline lengths if doubleRed is on
-            if doubleRes
+            % Overwrite feedline lengths if feedExtend or doubleRed is on
+            if feedExtend
+                nFeedLen = feedClearanceX(k) + feedExtendclearanceX;
+            elseif doubleRes
                 nFeedLen = ((resDist/2)+feedClearanceX(k)+tile);
             end
 
@@ -493,7 +495,8 @@ for tileY = 1:numTileY
             if feedExtend
                 xOffResGobal = -(feedExtendclearanceX) ...
                     - (feedExtendLen+(2*tileLongFeed))/2 ...
-                    + (couplerLen(k)/2);
+                    + (couplerLen(k)/2) ...
+                    - tileFeed;
                 yOffResGobal = feedGap+feedCond+feedGap+feedExtendDist;
             else
                 xOffResGobal = 0;
@@ -574,10 +577,7 @@ for tileY = 1:numTileY
 
             % Feedline
               % Straight section
-            if feedExtend
-                nFeedLen = feedClearanceX(k) + feedExtendclearanceX;
-            end
-            xOff=tile+feedClearanceX(k);
+            xOff=feedClearanceX(k);
             yOff=-(feedDist(k)+feedGap+feedCond+feedGap);
             feedLower = [[0,0]; ...
                          [-nFeedLen,0]; ...
@@ -589,7 +589,7 @@ for tileY = 1:numTileY
                        
               % Extendable section
             if feedExtend
-                xOffFeedGlobal = - (feedExtendclearanceX);
+                xOffFeedGlobal = - (feedExtendclearanceX + tileFeed);
                 yOffFeedGlobal = - (feedDist(k)+feedGap+feedCond+feedGap);
                 % Curved secion
                 order = [2,4,1,3];
@@ -621,7 +621,6 @@ for tileY = 1:numTileY
                 end
 
                   % Horz's
-
                 xOff=-(feedExtendLen+tileLongFeed)+xOffFeedGlobal;
                 yOff=feedGap+feedCond+feedGap+feedExtendDist+yOffFeedGlobal;
                 horzLower = [[0,feedGap]; ...
@@ -631,16 +630,13 @@ for tileY = 1:numTileY
                 horzUpper = [horzLower(1,:);horzLower(2,:)+feedGap+feedCond];
                 polygons{k,m} = [horzLower(1,:)+xOff;horzLower(2,:)+yOff]'; m=m+1;
                 polygons{k,m} = [horzUpper(1,:)+xOff;horzUpper(2,:)+yOff]'; m=m+1;
-
-                
-                
             end
             
             % Second horzitonal section for use with extenable section
             if feedExtend              
-                xOff=-feedLen+tile;
+                xOff=-feedLen+feedClearanceX(k);
                 yOff=-(feedDist(k)+feedGap+feedCond+feedGap);
-                horzLen = feedLen-(feedExtendclearanceX+(2*(tileFeed+tileLongFeed))+feedExtendLen);
+                horzLen = feedLen-(feedExtendclearanceX+(2*(tileFeed+tileLongFeed))+feedExtendLen)-feedClearanceX(k);
                 feedLower = [[0,0]; ...
                              [horzLen,0]; ...
                              [horzLen,feedGap]; ...
@@ -650,21 +646,19 @@ for tileY = 1:numTileY
                 polygons{k,m} = [feedUpper(1,:)+xOff;feedUpper(2,:)+yOff]'; m=m+1;
             end
                 
-              % End Connectors
-            if feedExtend
-                xOffExtra = -(feedLen- ...
-                    (feedExtendclearanceX+(2*tileLongFeed)+feedExtendLen))+nFeedLen...
-                    -(endConnectExpanLen+endConnectPadCondLen+endConnectPadGapLen)+tile;
-            else
-                xOffExtra=0;
-            end
-            
+              % End Connectors   
             if endConnect
-                xOff=tile+feedClearanceX(k);
+                if feedExtend
+                    xOff=feedClearanceX(k);
+                    xExtra=-feedLen;
+                else
+                    xOff=feedClearanceX(k);
+                    xExtra=-nFeedLen;
+                end
                 yOff=-(feedDist(k)+feedGap+feedCond+feedGap);
                 polygons{k,m} = [endConnectorPoints(:,1)+xOff,endConnectorPoints(:,2)+yOff]; m=m+1;
                 if not(doubleRes)
-                    polygons{k,m} = [(-endConnectorPoints(:,1))+xOff-nFeedLen+xOffExtra,endConnectorPoints(:,2)+yOff]; m=m+1;
+                    polygons{k,m} = [(-endConnectorPoints(:,1))+xOff+xExtra,endConnectorPoints(:,2)+yOff]; m=m+1;
                 end
             end
            
