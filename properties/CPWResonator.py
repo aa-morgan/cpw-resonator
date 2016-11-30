@@ -190,8 +190,8 @@ class Substrate:
 
 
 if __name__ == '__main__':
-    mCPW = CPWResonator(length=7624E-6, conductorWidth=9.06E-6, gapWidth=5E-6, conductorThickness=100E-9,
-                        resonatorType='quarter', conductorMaterial='Niobium', substrateMaterial='Silicon',
+    mCPW = CPWResonator(length=7186E-6, conductorWidth=20E-6, gapWidth=10E-6, conductorThickness=100E-9,
+                        resonatorType='quarter', conductorMaterial='Niobium Nitride', substrateMaterial='Silicon',
                         temperature=4, couplingCapacitance=10E-15, loadBoundaryCondition='Short', modes=[1, 2, 3])
     print(tabulate(
         [['Effective permittivity', mCPW.effectivePermittivity, ''],
