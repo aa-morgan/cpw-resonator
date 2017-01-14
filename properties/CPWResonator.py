@@ -45,6 +45,7 @@ class CPWResonator:
         self.externalQualityFactor2 = self.externalQualityFactor2(self.resonatorType, self.modes, self.uncoupledResonantFrequency,
             self.capacitancePerUnitLength, self.length, self.couplingCapacitance)
         self.loadedQualityFactor = self.loadedQualityFactor(self.internalQualityFactor, self.externalQualityFactor)
+        self.insertionLoss = self.insertionLoss(self.internalQualityFactor, self.externalQualityFactor)
 
     def effectivePermittivity(self, relativePermittivity):
         return (1 + relativePermittivity)/2
@@ -165,6 +166,10 @@ class CPWResonator:
             return -1
         return m
 
+    def insertionLoss(self, internalQualityFactor, externalQualityFactor):
+        g = internalQualityFactor/externalQualityFactor
+        return -20 * np.log10(g/(g+1))
+
     def conductorProperties(self, material):
         return{
             'Niobium': Conductor(material=material, criticalTemperature=9.2, londonPenetrationDepthZero=33.3E-9,
@@ -203,9 +208,9 @@ class Substrate:
 if __name__ == '__main__':
     mCPW = CPWResonator(length=7186E-6, conductorWidth=20E-6, gapWidth=10E-6, conductorThickness=100E-9,
                     resonatorType='quarter', conductorMaterial='Niobium Nitride', substrateMaterial='Silicon',
-                    temperature=4, couplingCapacitance=1E-15, loadBoundaryCondition='Short', modes=[1, 2, 3])
+                    temperature=4, couplingCapacitance=10E-15, loadBoundaryCondition='Short', modes=[1, 2, 3])
 print(tabulate(
-    [['Effective permittivity', mCPW.effectivePermittivity, ''],
+    [['Effective permittivity', mCPW.effectivePermittivity, '-'],
      ['Substrate capacitance', mCPW.capacitancePerUnitLength * math.pow(10, 12), 'pF/m'],
      ['Geometric Inductance', mCPW.geometricInducatancePerUnitLength, 'H/m'],
      ['Kinetic Inductance', mCPW.kineticInductancePerUnitLength, 'H/m'],
@@ -213,7 +218,9 @@ print(tabulate(
      ['Input Impedance', mCPW.inputImpedance, 'Ohms'],
      ['Resonant frequency (Uncoupled)', mCPW.uncoupledResonantFrequency/math.pow(10,9), 'Ghz'],
      ['Resonant frequency (Coupled)', mCPW.coupledResonantFrequency / math.pow(10, 9), 'Ghz'],
-     ['Internal Quality factor', mCPW.internalQualityFactor, ''],
-     ['External Quality factor', mCPW.externalQualityFactor, ''],
-     ['Loaded Quality factor', mCPW.loadedQualityFactor, '']],
+     ['Internal Quality factor', mCPW.internalQualityFactor, '-'],
+     ['External Quality factor', mCPW.externalQualityFactor, '-'],
+     ['External Quality factor [2]', mCPW.externalQualityFactor2, '-'],
+     ['Loaded Quality factor', mCPW.loadedQualityFactor, '-'],
+     ['Insertion loss', mCPW.insertionLoss, 'dB']],
     headers=['Property', 'Value', 'Units'], floatfmt=".2f"))
