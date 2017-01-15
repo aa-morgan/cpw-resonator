@@ -39,6 +39,13 @@ class CPWResonator:
             self.resonatorType, self.couplingCapacitance, self.loadImpedance, self.modes)
         self.inputImpedance = self.inputImpedance(self.length, self.characteristicImpedance, self.loadBoundaryCondition,
             self.totalInductancePerUnitLength, self.capacitancePerUnitLength, self.uncoupledResonantFrequency)
+        self.internalQualityFactor = self.internalQualityFactor(self.length, self.resonatorType, self.modes, self.conductor)
+        self.externalQualityFactor = self.externalQualityFactor(self.resonatorType, self.modes, self.uncoupledResonantFrequency,
+            self.couplingCapacitance, self.characteristicImpedance)
+        self.externalQualityFactor2 = self.externalQualityFactor2(self.resonatorType, self.modes, self.uncoupledResonantFrequency,
+            self.capacitancePerUnitLength, self.length, self.couplingCapacitance)
+        self.loadedQualityFactor = self.loadedQualityFactor(self.internalQualityFactor, self.externalQualityFactor)
+        self.insertionLoss = self.insertionLoss(self.internalQualityFactor, self.externalQualityFactor)
 
     def effectivePermittivity(self, relativePermittivity):
         return (1 + relativePermittivity)/2
@@ -111,26 +118,12 @@ class CPWResonator:
             return -1
 
     def uncoupledResonantFrequency(self, totalInductancePerUnitLength, capacitancePerUnitLength, length, resonatorType, modes):
-
-        if resonatorType == 'half':
-            m = 4.0/(2.0 * np.array(modes))
-        elif resonatorType == 'quarter':
-            m = 4.0/((2.0 * np.array(modes)) - 1)
-        else:
-            print('Error: Incorrect resonator type provided!')
-            return -1
+        m = self.getModeFactor(resonatorType, modes)
 
         return 1 / (math.sqrt(totalInductancePerUnitLength*capacitancePerUnitLength) * m * length)
 
     def coupledResonantFrequency(self, totalInductancePerUnitLength, capacitancePerUnitLength, length, resonatorType, couplingCapacitance, loadImpedane, modes):
-
-        if resonatorType == 'half':
-            m = 4.0 / (2.0 * np.array(modes))
-        elif resonatorType == 'quarter':
-            m = 4.0 / ((2.0 * np.array(modes)) - 1)
-        else:
-            print('Error: Incorrect resonator type provided!')
-            return -1
+        m = self.getModeFactor(resonatorType, modes)
 
         # Pre-coupled
         uncoupledResonantFrequency = 1 / (math.sqrt(totalInductancePerUnitLength*capacitancePerUnitLength) * m * length)
@@ -144,12 +137,45 @@ class CPWResonator:
         return couplingCapacitance / \
                (1 + np.power(frequency * couplingCapacitance * loadImpedane * math.pi, 2))
 
+    def internalQualityFactor(self, length, resonatorType, modes, conductor):
+        m = self.getModeFactor(resonatorType, modes)
+        return (1/m) * (math.pi/(conductor.amplitudeAttenuationPerUnitLength*length))
+
+    def externalQualityFactor(self, resonatorType, modes, uncoupledResonantFrequency, couplingCapacitance, characteristicImpedance):
+        m = self.getModeFactor(resonatorType, modes)
+        q_in = 2 * math.pi * uncoupledResonantFrequency * couplingCapacitance * characteristicImpedance
+        return (1/m) * (math.pi/(q_in**2))
+
+    def externalQualityFactor2(self, resonatorType, modes, uncoupledResonantFrequency, capacitancePerUnitLength, length, couplingCapacitance, loadResistance=50):
+        omega_n = 2 * math.pi * uncoupledResonantFrequency
+        r_star = (1+(omega_n*couplingCapacitance*loadResistance)**2) / ((omega_n*couplingCapacitance)**2 * loadResistance)
+        C = (capacitancePerUnitLength * length)/2
+        return  omega_n * r_star * C
+
+
+    def loadedQualityFactor(self, internalQualityFactor, externalQualityFactor):
+        return 1/((1/internalQualityFactor) + (1/externalQualityFactor))
+
+    def getModeFactor(self, resonatorType, modes):
+        if resonatorType == 'half':
+            m = 4.0 / (2.0 * np.array(modes))
+        elif resonatorType == 'quarter':
+            m = 4.0 / ((2.0 * np.array(modes)) - 1)
+        else:
+            print('Error: Incorrect resonator type provided!')
+            return -1
+        return m
+
+    def insertionLoss(self, internalQualityFactor, externalQualityFactor):
+        g = internalQualityFactor/externalQualityFactor
+        return -20 * np.log10(g/(g+1))
+
     def conductorProperties(self, material):
         return{
             'Niobium': Conductor(material=material, criticalTemperature=9.2, londonPenetrationDepthZero=33.3E-9,
-                resistancePerUnitLength=0, conductancePerUnitLength=0),
+                resistancePerUnitLength=0, conductancePerUnitLength=0, amplitudeAttenuationPerUnitLength=0.01),
             'Niobium Nitride': Conductor(material=material, criticalTemperature=16.2, londonPenetrationDepthZero=40E-9,
-                resistancePerUnitLength=0, conductancePerUnitLength=0),
+                resistancePerUnitLength=0, conductancePerUnitLength=0, amplitudeAttenuationPerUnitLength=0.01),
         }[material]
 
     def substrateProperties(self, material):
@@ -162,12 +188,14 @@ class CPWResonator:
 class Conductor:
     """CPW conductor material class"""
 
-    def __init__(self, material, criticalTemperature, londonPenetrationDepthZero, resistancePerUnitLength, conductancePerUnitLength):
+    def __init__(self, material, criticalTemperature, londonPenetrationDepthZero, resistancePerUnitLength,
+                 conductancePerUnitLength, amplitudeAttenuationPerUnitLength):
         self.material = material
         self.criticalTemperature = criticalTemperature
         self.londonPenetrationDepthZero = londonPenetrationDepthZero
         self.resistancePerUnitLength = resistancePerUnitLength
         self.conductancePerUnitLength = conductancePerUnitLength
+        self.amplitudeAttenuationPerUnitLength = amplitudeAttenuationPerUnitLength
 
 
 class Substrate:
@@ -182,12 +210,17 @@ if __name__ == '__main__':
                     resonatorType='quarter', conductorMaterial='Niobium Nitride', substrateMaterial='Silicon',
                     temperature=4, couplingCapacitance=10E-15, loadBoundaryCondition='Short', modes=[1, 2, 3])
 print(tabulate(
-    [['Effective permittivity', mCPW.effectivePermittivity, ''],
+    [['Effective permittivity', mCPW.effectivePermittivity, '-'],
      ['Substrate capacitance', mCPW.capacitancePerUnitLength * math.pow(10, 12), 'pF/m'],
      ['Geometric Inductance', mCPW.geometricInducatancePerUnitLength, 'H/m'],
      ['Kinetic Inductance', mCPW.kineticInductancePerUnitLength, 'H/m'],
      ['Characteristic Impedance', mCPW.characteristicImpedance, 'Ohms'],
      ['Input Impedance', mCPW.inputImpedance, 'Ohms'],
      ['Resonant frequency (Uncoupled)', mCPW.uncoupledResonantFrequency/math.pow(10,9), 'Ghz'],
-     ['Resonant frequency (Coupled)', mCPW.coupledResonantFrequency / math.pow(10, 9), 'Ghz']],
-    headers=['Property', 'Value', 'Units']))
+     ['Resonant frequency (Coupled)', mCPW.coupledResonantFrequency / math.pow(10, 9), 'Ghz'],
+     ['Internal Quality factor', mCPW.internalQualityFactor, '-'],
+     ['External Quality factor', mCPW.externalQualityFactor, '-'],
+     ['External Quality factor [2]', mCPW.externalQualityFactor2, '-'],
+     ['Loaded Quality factor', mCPW.loadedQualityFactor, '-'],
+     ['Insertion loss', mCPW.insertionLoss, 'dB']],
+    headers=['Property', 'Value', 'Units'], floatfmt=".2f"))
