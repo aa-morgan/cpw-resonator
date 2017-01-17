@@ -2,28 +2,26 @@ from scipy.special import ellipk
 import math
 from tabulate import tabulate
 import numpy as np
-import cmath
-
 
 class CPWResonator:
     """Coplanar wave-guide resonator class"""
 
     def __init__(self, length, conductorWidth, gapWidth, conductorThickness, resonatorType,
                  conductorMaterial='Niobium', substrateMaterial='Silicon',
-                 temperature=4, couplingCapacitance=0E0, loadImpedance=50, loadBoundaryCondition='Short', modes=[1]):
+                 temperature=4, couplingCapacitance=0E0, loadImpedance=50, loadBoundaryCondition='Short', modes=1):
         # Supplied parameters
-        self.length = length
-        self.conductorWidth = conductorWidth
-        self.gapWidth = gapWidth
-        self.conductorThickness = conductorThickness
-        self.resonatorType = resonatorType
+        self.length = np.array(length)
+        self.conductorWidth = np.array(conductorWidth)
+        self.gapWidth = np.array(gapWidth)
+        self.conductorThickness = np.array(conductorThickness)
+        self.resonatorType = np.array(resonatorType)
         self.conductor = self.conductorProperties(conductorMaterial)
         self.substrate = self.substrateProperties(substrateMaterial)
-        self.temperature = temperature
-        self.couplingCapacitance = couplingCapacitance
-        self.loadImpedance = loadImpedance
-        self.loadBoundaryCondition = loadBoundaryCondition
-        self.modes = modes
+        self.temperature = np.array(temperature)
+        self.couplingCapacitance = np.array(couplingCapacitance)
+        self.loadImpedance = np.array(loadImpedance)
+        self.loadBoundaryCondition = np.array(loadBoundaryCondition)
+        self.modes = np.array(modes)
 
         # Calculated parameters
         self.effectivePermittivity = self.effectivePermittivity(self.substrate.relativePermittivity)
@@ -42,7 +40,7 @@ class CPWResonator:
         self.internalQualityFactor = self.internalQualityFactor(self.length, self.resonatorType, self.modes, self.conductor)
         self.externalQualityFactor = self.externalQualityFactor(self.resonatorType, self.modes, self.uncoupledResonantFrequency,
             self.couplingCapacitance, self.characteristicImpedance)
-        self.externalQualityFactor2 = self.externalQualityFactor2(self.resonatorType, self.modes, self.uncoupledResonantFrequency,
+        self.externalQualityFactor2 = self.externalQualityFactor2(self.uncoupledResonantFrequency,
             self.capacitancePerUnitLength, self.length, self.couplingCapacitance)
         self.loadedQualityFactor = self.loadedQualityFactor(self.internalQualityFactor, self.externalQualityFactor)
         self.insertionLoss = self.insertionLoss(self.internalQualityFactor, self.externalQualityFactor)
@@ -56,7 +54,7 @@ class CPWResonator:
 
         # Complete elliptic integral of the first kind
         k = conductorWidth / (conductorWidth + 2 * gapWidth)
-        k2 = math.sqrt(1 - math.pow(k,2))
+        k2 = np.sqrt(1 - np.power(k,2))
 
         # Total CPW capacitance p.u.l.
         return 4 * freeSpacePermittivity * (effectivePermittivity + 0) * (ellipk(k) / ellipk(k2))
@@ -67,7 +65,7 @@ class CPWResonator:
 
         # Complete elliptic integral of the first kind
         k = conductorWidth / (conductorWidth + 2 * gapWidth)
-        k2 = math.sqrt(1 - math.pow(k,2))
+        k2 = np.sqrt(1 - np.power(k,2))
 
         # Total conductor geometric inductance p.u.l.
         return (freeSpacePermeability / 4) * (ellipk(k2) / ellipk(k))
@@ -85,10 +83,10 @@ class CPWResonator:
         londonPenetrationDepthT = self.londonPenetrationDepthT(temperature, criticalTemperature, londonPenetrationDepthZero)
 
         # Geometrical factor
-        geometricFactor = (1 / (2 * math.pow(k, 2) * math.pow(K, 2))) * (
+        geometricFactor = (1 / (2 * np.power(k, 2) * np.power(K, 2))) * (
             - math.log(conductorThickness / (4 * conductorWidth)) + ((2 * (conductorWidth + gapWidth))
-            / (conductorWidth + 2 * gapWidth)) * math.log(gapWidth / (conductorWidth + gapWidth)) - (
-            conductorWidth / (conductorWidth + 2 * gapWidth)) * math.log(conductorThickness
+            / (conductorWidth + 2 * gapWidth)) * np.log(gapWidth / (conductorWidth + gapWidth)) - (
+            conductorWidth / (conductorWidth + 2 * gapWidth)) * np.log(conductorThickness
             / (4 * (conductorWidth + 2 * gapWidth))))
 
         # Kinetic Inductance p.u.l.
@@ -99,7 +97,7 @@ class CPWResonator:
         return londonPenetrationDepthZero / math.sqrt(1 - math.pow((temperature / criticalTemperature), 4))
 
     def characteristicImpedance(self, inductance, capacitance, resistance=0, conductance=0, frequency=1):
-        return cmath.sqrt(
+        return np.sqrt(
             (resistance + 1j*2*math.pi*frequency*inductance ) /
             (conductance + 1j*2*math.pi*frequency*capacitance))
 
@@ -120,13 +118,13 @@ class CPWResonator:
     def uncoupledResonantFrequency(self, totalInductancePerUnitLength, capacitancePerUnitLength, length, resonatorType, modes):
         m = self.getModeFactor(resonatorType, modes)
 
-        return 1 / (math.sqrt(totalInductancePerUnitLength*capacitancePerUnitLength) * m * length)
+        return 1 / (np.sqrt(totalInductancePerUnitLength*capacitancePerUnitLength) * m * length)
 
     def coupledResonantFrequency(self, totalInductancePerUnitLength, capacitancePerUnitLength, length, resonatorType, couplingCapacitance, loadImpedane, modes):
         m = self.getModeFactor(resonatorType, modes)
 
         # Pre-coupled
-        uncoupledResonantFrequency = 1 / (math.sqrt(totalInductancePerUnitLength*capacitancePerUnitLength) * m * length)
+        uncoupledResonantFrequency = 1 / (np.sqrt(totalInductancePerUnitLength*capacitancePerUnitLength) * m * length)
 
         # Post-coupled
         effectiveCouplingCapacitance = self.effectiveCouplingCapacitance(couplingCapacitance, uncoupledResonantFrequency, loadImpedane)
@@ -146,11 +144,11 @@ class CPWResonator:
         q_in = 2 * math.pi * uncoupledResonantFrequency * couplingCapacitance * characteristicImpedance
         return (1/m) * (math.pi/(q_in**2))
 
-    def externalQualityFactor2(self, resonatorType, modes, uncoupledResonantFrequency, capacitancePerUnitLength, length, couplingCapacitance, loadResistance=50):
+    def externalQualityFactor2(self, uncoupledResonantFrequency, capacitancePerUnitLength, length, couplingCapacitance, loadResistance=50):
         omega_n = 2 * math.pi * uncoupledResonantFrequency
         r_star = (1+(omega_n*couplingCapacitance*loadResistance)**2) / ((omega_n*couplingCapacitance)**2 * loadResistance)
         C = (capacitancePerUnitLength * length)/2
-        return  omega_n * r_star * C
+        return omega_n * r_star * C
 
 
     def loadedQualityFactor(self, internalQualityFactor, externalQualityFactor):
@@ -158,9 +156,9 @@ class CPWResonator:
 
     def getModeFactor(self, resonatorType, modes):
         if resonatorType == 'half':
-            m = 4.0 / (2.0 * np.array(modes))
+            m = 4.0 / (2.0 * modes)
         elif resonatorType == 'quarter':
-            m = 4.0 / ((2.0 * np.array(modes)) - 1)
+            m = 4.0 / ((2.0 * modes) - 1)
         else:
             print('Error: Incorrect resonator type provided!')
             return -1
@@ -206,9 +204,17 @@ class Substrate:
         self.relativePermittivity = relativePermittivity
 
 if __name__ == '__main__':
-    mCPW = CPWResonator(length=7186E-6, conductorWidth=20E-6, gapWidth=10E-6, conductorThickness=100E-9,
-                    resonatorType='quarter', conductorMaterial='Niobium Nitride', substrateMaterial='Silicon',
-                    temperature=4, couplingCapacitance=10E-15, loadBoundaryCondition='Short', modes=[1, 2, 3])
+    mCPW = CPWResonator(length=7186E-6,
+                        conductorWidth=20E-6,
+                        gapWidth=10E-6,
+                        conductorThickness=100E-9,
+                        resonatorType='quarter',
+                        conductorMaterial='Niobium Nitride',
+                        substrateMaterial='Silicon',
+                        temperature=4,
+                        couplingCapacitance=10E-15,
+                        loadBoundaryCondition='Short',
+                        modes=[1,2,3])
 
 np.set_printoptions(precision=3)
 print(tabulate(
@@ -225,4 +231,4 @@ print(tabulate(
      ['External Quality factor [2]', mCPW.externalQualityFactor2, '-'],
      ['Loaded Quality factor', mCPW.loadedQualityFactor, '-'],
      ['Insertion loss', mCPW.insertionLoss, 'dB']],
-    headers=['Property', 'Value', 'Units'], floatfmt=".2f"))
+    headers=['Property', 'Value', 'Units']))
