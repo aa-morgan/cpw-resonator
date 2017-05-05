@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: rydberg
+Version: 0.0.1
+Summary: Package with tools useful for designing co-planar waveguide (CPW) resonators.
+Home-page: UNKNOWN
+Author: Alex Morgan
+Author-email: axm108@gmail.com
+License: BSD 3-clause
+Description: UNKNOWN
+Platform: UNKNOWN
