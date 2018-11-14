@@ -11,6 +11,6 @@ setup(name='rydberg',
       author='Alex Morgan',
       author_email='axm108@gmail.com',
       license='BSD 3-clause',
-      packages=['cpw_design'],
+      packages=['cpwprop'],
       include_package_data=True,
       zip_safe=False)
